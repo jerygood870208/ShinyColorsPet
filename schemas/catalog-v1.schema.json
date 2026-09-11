@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jerygood870208/ShinyColorsPet/schemas/catalog-v1.schema.json",
+  "title": "ShinyColorsPet catalog v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "units", "characters", "asset_packs"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "units": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/unit"}
+    },
+    "characters": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/character"}
+    },
+    "asset_packs": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/id"},
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$",
+      "maxLength": 100
+    },
+    "i18n_key": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$",
+      "maxLength": 200
+    },
+    "asset_ref": {
+      "type": "string",
+      "pattern": "^asset://[a-z0-9][a-z0-9._-]*/[^\\\\]+$",
+      "maxLength": 500
+    },
+    "source_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "provider": {"$ref": "#/$defs/id"},
+        "external_id": {"type": "string", "minLength": 1, "maxLength": 200}
+      },
+      "required": ["provider", "external_id"]
+    },
+    "ui_assets": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "icon": {"$ref": "#/$defs/asset_ref"},
+        "portrait": {"$ref": "#/$defs/asset_ref"},
+        "profile_background": {"$ref": "#/$defs/asset_ref"},
+        "chat_background": {"$ref": "#/$defs/asset_ref"},
+        "chat_icon": {"$ref": "#/$defs/asset_ref"}
+      }
+    },
+    "unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name_key", "sort_order", "member_character_ids"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "name_key": {"$ref": "#/$defs/i18n_key"},
+        "sort_order": {"type": "integer", "minimum": 0},
+        "enabled": {"type": "boolean", "default": true},
+        "member_character_ids": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/id"},
+          "uniqueItems": true
+        },
+        "ui_assets": {"$ref": "#/$defs/ui_assets"},
+        "source_ref": {"$ref": "#/$defs/source_ref"}
+      }
+    },
+    "character": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name_key", "unit_ids", "default_outfit_id", "default_costume_mode", "outfits"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "name_key": {"$ref": "#/$defs/i18n_key"},
+        "unit_ids": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/id"},
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "enabled": {"type": "boolean", "default": true},
+        "default_outfit_id": {"$ref": "#/$defs/id"},
+        "default_costume_mode": {"enum": ["normal", "performance"]},
+        "ui_assets": {"$ref": "#/$defs/ui_assets"},
+        "source_ref": {"$ref": "#/$defs/source_ref"},
+        "outfits": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/outfit"},
+          "minItems": 1
+        }
+      }
+    },
+    "outfit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name_key", "sort_order", "variants"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "name_key": {"$ref": "#/$defs/i18n_key"},
+        "sort_order": {"type": "integer", "minimum": 0},
+        "source_ref": {"$ref": "#/$defs/source_ref"},
+        "variants": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/variant"},
+          "minItems": 1,
+          "maxItems": 4
+        }
+      }
+    },
+    "variant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["presentation", "costume_mode", "model_asset_ref"],
+      "properties": {
+        "presentation": {"enum": ["standard", "chibi"]},
+        "costume_mode": {"enum": ["normal", "performance"]},
+        "model_asset_ref": {"$ref": "#/$defs/asset_ref"},
+        "manifest_asset_ref": {"$ref": "#/$defs/asset_ref"}
+      }
+    }
+  }
+}
+

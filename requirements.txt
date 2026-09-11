@@ -1,0 +1,2 @@
+-e .[dev,webengine,voice,packaging]
+

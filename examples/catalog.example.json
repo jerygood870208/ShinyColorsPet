@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "units": [
+    {
+      "id": "example-unit",
+      "name_key": "unit.example-unit.name",
+      "sort_order": 0,
+      "member_character_ids": ["example-character"],
+      "ui_assets": {"icon": "asset://example-pack/ui/unit.png"}
+    }
+  ],
+  "characters": [
+    {
+      "id": "example-character",
+      "name_key": "character.example-character.name",
+      "unit_ids": ["example-unit"],
+      "default_outfit_id": "example-outfit",
+      "default_costume_mode": "normal",
+      "ui_assets": {
+        "portrait": "asset://example-pack/ui/portrait.png",
+        "profile_background": "asset://example-pack/ui/profile.png",
+        "chat_background": "asset://example-pack/ui/chat.png",
+        "chat_icon": "asset://example-pack/ui/chat-icon.png"
+      },
+      "outfits": [
+        {
+          "id": "example-outfit",
+          "name_key": "outfit.example-character.example-outfit.name",
+          "sort_order": 0,
+          "variants": [
+            {
+              "presentation": "standard",
+              "costume_mode": "normal",
+              "model_asset_ref": "asset://example-pack/models/example/standard-normal/data.json",
+              "manifest_asset_ref": "asset://example-pack/manifests/example-standard-normal.yaml"
+            },
+            {
+              "presentation": "standard",
+              "costume_mode": "performance",
+              "model_asset_ref": "asset://example-pack/models/example/standard-performance/data.json",
+              "manifest_asset_ref": "asset://example-pack/manifests/example-standard-performance.yaml"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "asset_packs": ["example-pack"]
+}

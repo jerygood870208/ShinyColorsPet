@@ -1,0 +1,41 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>html,body,canvas{width:100%;height:100%;margin:0;overflow:hidden;background:transparent}</style>
+<script src="qrc:///qtwebchannel/qwebchannel.js"></script><script src="/runtime.js"></script>
+<script src="/clip_boundaries.js"></script><script src="/hit_geometry.js"></script></head>
+<script src="/semantic_drivers.js"></script><body><canvas id="canvas"></canvas><script>
+"use strict";
+let bridge=null,gl,canvas,shader,batcher,mvp,renderer,assets,skeleton,state,bounds,drivers;
+let disposed=false,last=performance.now()/1000,lastDraw=0,targetFps=60,quality=1,modelScale=1,rendererPma=false,viewportPadX=.04,viewportPadY=.04;
+const pending=[];
+let lastHitGeometry=0;
+function publishHitGeometry(ms) {
+    if(ms-lastHitGeometry<50)return;
+    lastHitGeometry=ms;
+    const w=canvas.width,h=canvas.height;
+    const scale=Math.max(bounds.size.x*(1+2*viewportPadX)/w,bounds.size.y*(1+2*viewportPadY)/h)/modelScale;
+    const projection={x:bounds.offset.x+bounds.size.x/2-w*scale/2,
+        y:bounds.offset.y+bounds.size.y/2-h*scale/2,width:w*scale,height:h*scale};
+    send("hitGeometry",captureHitGeometry(skeleton,spine,projection));
+}
+function send(name,value){if(bridge&&bridge[name])bridge[name](typeof value==="string"?value:JSON.stringify(value));else pending.push([name,value]);}
+new QWebChannel(qt.webChannelTransport,c=>{bridge=c.objects.bridge;while(pending.length){const p=pending.shift();send(p[0],p[1]);}});
+function fail(e){send("failed",{message:e&&e.stack?e.stack:String(e)});}
+function resize(){const dpr=(window.devicePixelRatio||1)*quality,w=Math.max(1,Math.round(canvas.clientWidth*dpr)),h=Math.max(1,Math.round(canvas.clientHeight*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}const cx=bounds.offset.x+bounds.size.x/2,cy=bounds.offset.y+bounds.size.y/2,s=Math.max(bounds.size.x*(1+2*viewportPadX)/w,bounds.size.y*(1+2*viewportPadY)/h)/modelScale;mvp.ortho2d(cx-w*s/2,cy-h*s/2,w*s,h*s);gl.viewport(0,0,w,h);}
+function draw(ms){if(disposed)return;requestAnimationFrame(draw);if(ms-lastDraw<1000/targetFps)return;lastDraw=ms;const now=performance.now()/1000,dt=Math.min(.1,now-last);last=now;resize();state.update(dt);drivers.beforeApply();state.apply(skeleton);drivers.afterApply();skeleton.updateWorldTransform();gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);shader.bind();shader.setUniformi(spine.webgl.Shader.SAMPLER,0);shader.setUniform4x4f(spine.webgl.Shader.MVP_MATRIX,mvp.values);batcher.begin(shader);renderer.premultipliedAlpha=rendererPma;drawWithClipBoundaries(renderer,batcher,skeleton,spine);batcher.end();shader.unbind();publishHitGeometry(ms);}
+window.shinyApi={
+ play(track,name,loop,mix,token){const anim=state.data.skeletonData.findAnimation(name);if(!anim){send("failed",{message:"animation not found: "+name});send("completed",token);return false;}const current=state.getCurrent(track);if(current&&mix>0)state.data.setMix(current.animation.name,name,mix);const entry=state.setAnimation(track,name,loop);entry.mixDuration=mix;entry._shinyToken=token;return true;},
+ configureDrivers(m,g,c){drivers.configure(m,g,c);},
+ setMouth(o,f){drivers.mouth(o,f);},setGaze(x,y){drivers.gaze(x,y);},
+ setExpressionSlot(s,a){drivers.clearExpressions();drivers.expression(s,a);},
+ clearExpressionSlots(){drivers.clearExpressions();},
+ clear(track){drivers.beforeApply();if(track===null){state.clearTracks();drivers.reset();}else state.clearTrack(track);skeleton.setToSetupPose();},
+ inspect(){return {tracks:state.tracks.map(e=>e?{name:e.animation.name,loop:e.loop}:null),drawOrderIsSetup:skeleton.drawOrder.every((s,i)=>s===skeleton.slots[i])};},
+ setFramePolicy(fps,vsync,q){targetFps=Math.max(1,fps);quality=q==="low"?.75:q==="high"?1.25:1;},
+ setScale(v){modelScale=v;},setPremultipliedAlpha(v){rendererPma=!!v;},
+ setViewportPadding(x,y){viewportPadX=x;viewportPadY=y;},
+ setSkin(name){if(!skeleton.data.findSkin(name)){send("failed",{message:"skin not found: "+name});return false;}skeleton.setSkinByName(name);skeleton.setSlotsToSetupPose();skeleton.updateWorldTransform();const o=new spine.Vector2(),z=new spine.Vector2();skeleton.getBounds(o,z,[]);bounds={offset:o,size:z};return true;},
+ dispose(){disposed=true;if(state)state.clearTracks();}
+};
+function loaded(){if(!assets.isLoadingComplete()){if(assets.getErrors&&Object.keys(assets.getErrors()).length){fail(JSON.stringify(assets.getErrors()));return;}requestAnimationFrame(loaded);return;}try{const atlas=assets.get("/assets/skeleton.atlas"),loader=new spine.AtlasAttachmentLoader(atlas),parser=new spine.SkeletonJson(loader),data=parser.readSkeletonData(assets.get("/assets/skeleton.json"));skeleton=new spine.Skeleton(data);skeleton.setToSetupPose();skeleton.updateWorldTransform();const o=new spine.Vector2(),z=new spine.Vector2();skeleton.getBounds(o,z,[]);bounds={offset:o,size:z};state=new spine.AnimationState(new spine.AnimationStateData(data));drivers=createSemanticDrivers(skeleton,state);state.addListener({complete:e=>{if(!e.loop&&e._shinyToken)send("completed",e._shinyToken);},event:(e,v)=>send("spineEvent",{track:e.trackIndex,name:v.data.name,time:v.time,token:e._shinyToken||null,intValue:v.intValue,floatValue:v.floatValue,stringValue:v.stringValue})});send("ready",{animations:data.animations.map(a=>a.name),skins:data.skins.map(s=>s.name),width:z.x,height:z.y,dpr:window.devicePixelRatio||1});requestAnimationFrame(draw);}catch(e){fail(e);}}
+try{canvas=document.getElementById("canvas");gl=canvas.getContext("webgl",{alpha:true,premultipliedAlpha:true,preserveDrawingBuffer:true});if(!gl)throw Error("WebGL is unavailable");const separate=gl.blendFuncSeparate.bind(gl);gl.blendFunc=(a,b)=>separate(a,b,gl.ONE,gl.ONE_MINUS_SRC_ALPHA);shader=spine.webgl.Shader.newTwoColoredTextured(gl);batcher=new spine.webgl.PolygonBatcher(gl);mvp=new spine.webgl.Matrix4();renderer=new spine.webgl.SkeletonRenderer(gl);assets=new spine.webgl.AssetManager(gl);assets.loadText("/assets/skeleton.json");assets.loadTextureAtlas("/assets/skeleton.atlas");requestAnimationFrame(loaded);}catch(e){fail(e);}
+</script></body></html>

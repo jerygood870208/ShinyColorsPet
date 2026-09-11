@@ -1,0 +1,721 @@
+{
+  "schema_version": 1,
+  "pack_id": "shinycolors-ui-v1",
+  "review": {
+    "status": "approved",
+    "reviewer": "project-owner",
+    "reviewed_on": "2026-09-05",
+    "copyright_owner": "Rights status confirmed by the project owner",
+    "source_url": "https://shinycolors.moe/",
+    "license": "Redistribution approved by the project owner on 2026-09-05",
+    "redistribution_scope": "source_and_packaged",
+    "notice": "Approval covers cb_icon_stand, chain_profile_bg, chain_talk_bg, ChainChrIcon, unit_icons PNG files, and idol_profiles.json."
+  },
+  "files": [
+    {
+      "path": "metadata/idol_profiles.json",
+      "sha256": "aec0e6b8aaedfa682307303c66f921375ae529672c24a78d8f7f76bdc9ed24fe",
+      "role": "other"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_701001.png",
+      "sha256": "fbb00722e89358f290f13624e17e8a0cc361ef2baa1cdb07a5f619e2601e50fa",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_702001.png",
+      "sha256": "d09ef5a7545bf4f7bc10550d964a2fbef4223feaab43281d1aaa574695872eb6",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_703001.png",
+      "sha256": "05dd386d76de2382fa17701ebe425d618ba25f31aa6c072ce6a8b014ff637275",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_704001.png",
+      "sha256": "bbd6c3842c75a92e66ba9079ac0d8a928c2441171ef5d8b9224130a52821f3ba",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_705001.png",
+      "sha256": "ac1a006d4a67509ec218a81865d674ad656ec34843c284d2326806f85f8e9b13",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_706001.png",
+      "sha256": "558910dff794d5928e03d4243c2d48078c5727311e7cf367d88590fd780f2350",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_707001.png",
+      "sha256": "a8f9b3e9f2fc769b3f1865db0823feea5d0e3370169a9102aac3daf429f574d6",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_708001.png",
+      "sha256": "49ca2b42ccdc52d61ce5e959c99e07753625d33d1cdd92a0b51467c5185023cb",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_709001.png",
+      "sha256": "8c78b109d1b881318783d8ea3fb53840cb17320e07a77ba71ab45c569c7c065a",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_710001.png",
+      "sha256": "5ec7acb570877e22fe1efa0422417ddc87a4a54e486e9493b91e423c79d82df3",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_711001.png",
+      "sha256": "60ab8e697f19873d2a0863dc911a3b8cd9723513e2523de240b3c41e844ed450",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_712001.png",
+      "sha256": "bb363d7c3ccdabb55d8ab523fc0dfd77deb523dbdbd70dd193fcf1b35f740b94",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_713001.png",
+      "sha256": "3e8dbc65cf5b36c5f020281f11d17540a0c5481086862f16d0ebe2f8e60ceca7",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_714001.png",
+      "sha256": "add8277541d4885cdacd0cfe66106c76d7c25fd3114e8b957dfc756d4a19cf22",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_715001.png",
+      "sha256": "823a6748eb2012d264ff348f4590dccd93beb9082b6b3e0ee31d121cfba69b93",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_716001.png",
+      "sha256": "c0a9e01fc742f1fc0d7c457a0e54f152f08de22c540287be43de193b39e8f0cc",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_717001.png",
+      "sha256": "d983d74f7b074d9194082dd4467c3447c96da88d97c6a305ab53439a7280248b",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_718001.png",
+      "sha256": "d9cd5af87485916d8b43b6ede696c6eab6e2f70b8e258f0b55926b0faf4374fe",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_719001.png",
+      "sha256": "9b9e6f7edfa0395b4db178b7711615a77362047d83d4aba0f81a74a202f44ba3",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_720001.png",
+      "sha256": "5cfa78d60e8438ea546352020d33f5f89990186b804a5ba3754855060eec82cc",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_721001.png",
+      "sha256": "aa38ea286c4d12587a85f60c0c5a835b8607fefb4c4f786b8ab5e7bd746c497d",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_722001.png",
+      "sha256": "9975a31d9017d4b78865129ed7e27353532030f7a40e41d916f7c65ba003a962",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_723001.png",
+      "sha256": "fb8b962c9874ca1670c32137a2c5083cbdfc474e26b266fe7eb36b7e8a609190",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_724001.png",
+      "sha256": "13e7a15aca8a75268dc52468bb2f4d9cce5761801bad5af8883c5c810220cbdf",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_725001.png",
+      "sha256": "dd73a1af53c3045450af2ec3c1750d6ddbc6307bb563dcbe2550854ec2d78070",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_726001.png",
+      "sha256": "08e8b2d7acceba684b3cdb1636771a58f1249aea863c93fcd4550ab9daf8d873",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_727001.png",
+      "sha256": "375ad6a44d899e98d040bfd341034a6c4b60b022bfb9793e756b358f43597e3a",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_728001.png",
+      "sha256": "e963392011fbfbd58bb5f6811d340ca3f0720f7bf949c9564a09a5d4eeb42969",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/character-portraits/cb_icon_stand_790001.png",
+      "sha256": "e828c4dd12497bf893c3cf4d6db1951d482a8e3b37a5e3588eb31e38724bb994",
+      "role": "character_portrait"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00001.png",
+      "sha256": "5bc9e5ec2c0d07621974519be42dd94972a15b7c3b29f2017adee447156f0266",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00002.png",
+      "sha256": "bbe8e9a3076151e1a3d1bdff296e54137d8ddb3edf8e21228db8d1aadb48f3e2",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00003.png",
+      "sha256": "bd593538f45b2dae9d94d66f2626df5c76caae4663a82fbbb9a6415cc4680074",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00004.png",
+      "sha256": "f4e338114709a92fec2c49bf5ddfcb2cb98f0481b202b272f8f51c97e56b93dc",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00005.png",
+      "sha256": "98b60f1fc241f769dd5e6dede3806efa5746ebeae6c30fd91428677d703418ee",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00006.png",
+      "sha256": "3cdd0b898c09ce1a6935ce78739b4b22d02573a39e216fac1e10eeb2cac6d788",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00007.png",
+      "sha256": "0c7df6e438e2f5220d035d8aa9dc012052ca08163084c7f5c80da3a63e10a0c4",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00008.png",
+      "sha256": "62d98f2a96f209cc0809afbecca8ea98435a9521d2f40e9037a0cb50cf697572",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00009.png",
+      "sha256": "a970097a4fd8818b20be624ed29c2b98063c167530cc88b978d90c6dc49268f5",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00010.png",
+      "sha256": "2889a466742f347b47ba2bf5dd1d912ada8f825eb372cc1b4d2e1b95030cd4a6",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00011.png",
+      "sha256": "cfbc77ad993ea25d52a73feb13878cb98dea9d69e987962999f4c0fc80da50df",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00012.png",
+      "sha256": "4517bb0a3318e218b3b8d81c17e7d666b7387962a42fa7e79e6e847cb75657ef",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00013.png",
+      "sha256": "28866cd6a45f71ba23455394b6f8edee42dc75d2e43c4251dc41ede270c3ba0e",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00014.png",
+      "sha256": "f3cdb4232841c8c114607c3afe765736e170e859344e031e252fa288da2ab988",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00015.png",
+      "sha256": "8aac41343c406075657a4ae07df64d8e5beb02c78e128b7fc790d085d9d8de6e",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00016.png",
+      "sha256": "87bf2d252977b353cc229ffca4f09081dc7a34097baeeb50b6adc8252dfea399",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00017.png",
+      "sha256": "008b6b737700df95708aa8eaedcddd5c5cb2ed5bfccdf12f334e9a1173e2be42",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00018.png",
+      "sha256": "ac484569665e7439a5668141f5770d87223d46567c7bbfd2a8b5e59994d497f3",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00019.png",
+      "sha256": "11ff2f572849de0a5f720ccf71b2e967b4060167ea60b972de6ab189c4aa158c",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00020.png",
+      "sha256": "0f1435839802047799438a1c3f2628e5d7dd7dc8c6e3c966611820a95d574d7a",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00021.png",
+      "sha256": "c81d926905e34fa6a22eadbe6db9029d416535ed0d7ecd4039416a744c5a9440",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00022.png",
+      "sha256": "cc020ee5e965988016b7c445dfc297e79bf8d79634c376e76b1c5f111e5f56c4",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00023.png",
+      "sha256": "399e8953217a27516dcf4255c4a86bf60ef5a4a662d979cc898d4868bc63477b",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00024.png",
+      "sha256": "5a7710431edd1a7211157daf6341659e9223e3ef519ed97e8647ff6553ae44c2",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00025.png",
+      "sha256": "f33c66425a0d5b72319c4604224a2c6e6acca47eb6df87bc2e3c5885236bc3bd",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00026.png",
+      "sha256": "55be89f8ccd0418e086d73596f0931b4e15f3277f26b69911adb82880c1d9265",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00027.png",
+      "sha256": "c145bd84b21ac544fa5469106f118c698158af4afc68ae50d5c84fdabc06e46f",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00028.png",
+      "sha256": "1bad457af82c9f79bd1b0c38a3c3e130675e82eb341ba91bcb3935b183611f1b",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-backgrounds/chain_talk_bg_00090.png",
+      "sha256": "5db710cc0c8c46101282874bd4923fb364ab2d39b9060a8fc6246e9da4e30c3b",
+      "role": "chat_background"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00001.png",
+      "sha256": "a298ea06ffc804f2c90aae5f123a3736de05d27e9f39ac3ea700a01c47c66b18",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00002.png",
+      "sha256": "8b28047e39e5ff1b992de2196ddc5fa26f04a4aac48321587574c0d22177b451",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00003.png",
+      "sha256": "e78dd6444b82636226d6524519b28c0ec8893b0f8078f3a38e7095a547f9b775",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00004.png",
+      "sha256": "ca22eea34695dffc614d3fb148ee53100ebefebeb5ed8f56ad4419f3d77aa0d7",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00005.png",
+      "sha256": "dedb40b76f9509b54a9ac45b3a75b87982ee68369c962f927c609f790cd7b4dd",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00006.png",
+      "sha256": "b9da09576511516fe31446f673f6f824ffd9ad323ff767d6126298263b0bf048",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00007.png",
+      "sha256": "c379f836919e183de3d91345c910a1840d55f81a61cf65688343d828d33766e3",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00008.png",
+      "sha256": "fae8a9a9c00a2766ef00634e79bc34d8e6cdabd2f2d70ba031a5959675ad93f5",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00009.png",
+      "sha256": "e0ba3f6cef8be28e3285e389d42855526b61dca373be12105281553d7c383057",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00010.png",
+      "sha256": "1f9a5c94779c7c6b99813c800d3b127e86961017e77700a863cc2ebf42fdfc27",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00011.png",
+      "sha256": "d5270de54eedefdec025e7684fb2555f4af699d9bb2fb005eaa201d92e3e5abc",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00012.png",
+      "sha256": "63101dddd325ae45ab48167f70ecf0ab81204652e9caa1040eb047d886a12fa1",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00013.png",
+      "sha256": "6beaceeb31761751810c2d32cfb21a5a05a433093a0281897b0948336f715ba8",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00014.png",
+      "sha256": "b0cb9a11b6cf5bb93c88332920547bf5bc3c2eac8e4e1d482709f6f3b67a920e",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00015.png",
+      "sha256": "2e1cde0a11dff4ed5c6ac39eab74a4e44b75da3d0a9ff045cc42f3dffd744aab",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00016.png",
+      "sha256": "75553c702194d192edb20a86968bd5bd29cbcac731e35a7f4b510c148ebf3e99",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00017.png",
+      "sha256": "60f99006e70b0bbe0b032f1bfc3c09ddc3bccbde888a2af870dc818987267729",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00018.png",
+      "sha256": "b2baf0f86c38762b9d206cc63a3abbc1858b15985068f32deb7f5e088f47c693",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00019.png",
+      "sha256": "bbb79519fe0c56b955101ca1442ad3f460cebb77d54c06417cf6bc74b648239e",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00020.png",
+      "sha256": "b2cdbc13705ad361166529edc0dafb8dd2d805c8df2a8736064ecc73dedf2d11",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00021.png",
+      "sha256": "9045982bacd5942fca14893bab4b19368fe041aac246025cf0681ee21efb7eb7",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00022.png",
+      "sha256": "ac3bbf01e7a8811beb79216cdbdf545f4ea74265369ceba8eabbc6352d40c910",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00023.png",
+      "sha256": "e05169b1c76ccf6194c5d2c33772b752b95a42992e4d6e4da7753b4a5c81aa58",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00024.png",
+      "sha256": "d7704942f1e9a4e4d2f4495ff8c3213c2070a6aed50f4e5ad69e6562e6f15182",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00025.png",
+      "sha256": "2c0bf9f3cccf9662dbd43b2ebd90782e13ef402fcae5c618c6482515b01d8b6d",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00026.png",
+      "sha256": "6b35a560be93428d91b95b6c60febb573a4d4d6447c706fe38ae69453269a4e4",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00027.png",
+      "sha256": "7a71c3e41c670f165e71443a76e4f89375f31d2ce5badfcd96ec75f492b78642",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00028.png",
+      "sha256": "82c0dcb97338253c0860c8e337805150606d8302ba57b073407e0e28d3b9e99f",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_00090.png",
+      "sha256": "d99c5241a2339c3c6d63f5a8c4389b129896e05b6d87e31fcbfb691332ff3635",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_01001.png",
+      "sha256": "73de2ee2e863f0ffc942933f8684d335e45b85dd73eef44fe5de8c8ef62f4bc9",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_01002.png",
+      "sha256": "9f5380dc40c59cf99394f920f7ed97709f972b9fe784b6d760877fc98ff081a8",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_01003.png",
+      "sha256": "8ddf118b04d18f8176ce864c3b89e372c8bebaa825a8c22a7a02b788a9b3ff36",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_01004.png",
+      "sha256": "f9fa6de5147552d9034934bddd54427036805eea62a65f2244c44a0d3a403492",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_01005.png",
+      "sha256": "a98e36023b81b01d987b07a1b300386e551d3abdc754612a2abf921af3a84e57",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_01006.png",
+      "sha256": "9bed4a080c9a852b86cf50f9b472f36030e91600850bd2a7ac36a92d914bb9ff",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_01007.png",
+      "sha256": "d1c03daac652fe862342ec4f3eb85b40c5414e3d21a7ddab90a8d932b656ab0d",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_01008.png",
+      "sha256": "2dc55a659bac6dd6ee3a35a233ae95e24addf6bc89f0ebf13c2f042ff2996ce4",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_01100.png",
+      "sha256": "fc946965b7204a6327c75fe09d8168d42c3ffae02d6f34b0c27908e4a425c99d",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_01101.png",
+      "sha256": "cf67a58a4f8eab73d2a07653adb7d36e16b51fe934b42c4eacebfc8ce1ecafee",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_01102.png",
+      "sha256": "ae88b3c7a1f173ac56c765c9c411b4be8a9d8f776d9be346245691576374959f",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_01103.png",
+      "sha256": "33db6d35815061dae79fc836ce3eb26b5451d855b8a554c21174247e7cc96bce",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_01104.png",
+      "sha256": "8a3d0222b5c263e32efe3722bc743e1068db6bb5de27162ad45afaa2cf33b155",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_01105.png",
+      "sha256": "6ac9aad048fd94e0b00461aa0737f2a8926354530ec5adf798e5919ecb34c998",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/chat-icons/ChainChrIcon_01106.png",
+      "sha256": "06acd010a68dcbc81a6de2696e1f99647f711ece96166b98469230c21dd749d3",
+      "role": "chat_icon"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_01.png",
+      "sha256": "8085c503b029d88591c89b61b018db5ac0c0df87f3174a8dfaabcb98926e9934",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_02.png",
+      "sha256": "7c8131946eadd9f481274c64cb97473e4446e63bff7e89d926c62b3747269fa9",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_03.png",
+      "sha256": "f8266d06e2d49158f8594041f1e6dcab53a9c93c1ed83bb090ddc571a98f3d7d",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_04.png",
+      "sha256": "951a0fea7db318b7af004eb3bdf1bd3a7f8675ac77a5c7873c566aab38a5d190",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_05.png",
+      "sha256": "0b5ef1a3f52622be9b35bdef8cba26fd919241c6a738a755fd54ce0e192da3bf",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_06.png",
+      "sha256": "1402b5bc6e1016b1290047942f8659c9090d82801b69397b2c11197e35822620",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_07.png",
+      "sha256": "b8f5de91ad0dcf5b12371445462709f6330e3475f05028b39ac92807f23464e7",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_08.png",
+      "sha256": "8f134b39de23fe668c34f596b58ebdc7908965d83aa65fe716ea53e1100cebbc",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_09.png",
+      "sha256": "70515e22cc67eceb6430228f9c726c62848cdd16c7dcea404f60917d97786119",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_10.png",
+      "sha256": "c93bf98760481d9ecd462e0fdb679ecd11f60444bf40331d11472b4143595654",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_11.png",
+      "sha256": "a71470e3717a2738bf74bf59ba08a1e808a52221dab2e9a39d0db12da8f382fa",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_12.png",
+      "sha256": "e9694b5450ee2d4358187278db736f95731cabbcd29ff7c68a4e4385cb12c3e7",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_13.png",
+      "sha256": "64d184c11eef35f9cc99107ef83bee4f121f1c8b95d0a0197e849e42631fe69f",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_14.png",
+      "sha256": "6f2b29abfc1e134ee4c4ca0bb1d94d52b8f5c6cb1c2d0460a4e3e90081b0e2a6",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_15.png",
+      "sha256": "16867a9ab82bf5e1851212c0ced4257cde0d01a49cbc81dd9cd3f5547002b1a2",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_16.png",
+      "sha256": "3a5a64c25092e93e59c005347e42fda0703bf565b702a82162a9652f37f89d06",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_17.png",
+      "sha256": "e1cb11c37029d79c4c50078c900d69e4b3cbe96f49bf54ea0bb8829dbcb270df",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_18.png",
+      "sha256": "5890b9c562edcd1188f255f91ad3ff7da5d2e5c34d0cbb3c3243f49949bb0204",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_19.png",
+      "sha256": "3db0b7dd731ec06c48dff86320b791b4db6fbb3b60b15be025a801813b14b98b",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_20.png",
+      "sha256": "c8964e1411a7701178e595a227f05d3197a5261a9074a16f7686e6ee96bf3cfa",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_21.png",
+      "sha256": "693a01110adb18d6a2495ef01edc28da172fe3dc83d7bcf2341c9e233bdd634e",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_22.png",
+      "sha256": "1b7c72e4f7bd39d850904db69a3b6a20dc99ce53e260649b2eb4b6b6da64b637",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_23.png",
+      "sha256": "e1dfd2c34e5a0bc752f8d0adc8bdf33ac421b3dd5b24472b0380408040342187",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_24.png",
+      "sha256": "f1afbe6e5673d751adc57a468c8488ce84412a1709927d4d665433501eba1bb5",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_25.png",
+      "sha256": "b15362e21e52c8624b8fd075846ca586ceb759113c2dc5cc094d1499a26709a4",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_26.png",
+      "sha256": "9b182d9c92be412fdb829cf9e3737744700d693a0f9a154cf04d179f50b75bce",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_27.png",
+      "sha256": "ceae9672bba8c1598426df486c1f30862ae92995cbeb6e04d8b740149956adf9",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_28.png",
+      "sha256": "fb8e3e1eaea92412dcfb2b4a259fb534f0e299e34d9a3794e98775e1c0251126",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/profile-backgrounds/chain_profile_bg_90.png",
+      "sha256": "2962174116c5cc07518767be5c68bf433bc87d7d9530a1362717a65bbe9588d8",
+      "role": "profile_background"
+    },
+    {
+      "path": "ui/unit-icons/unit_icon_00.png",
+      "sha256": "815796e3dab747e7c691d45954e8eef57b30e5821e472d548893adefe5b6b65f",
+      "role": "unit_icon"
+    },
+    {
+      "path": "ui/unit-icons/unit_icon_01.png",
+      "sha256": "e60d379f6003c37a40215c8818b8dafdf617ea84f45fd3d056cbd9c916651715",
+      "role": "unit_icon"
+    },
+    {
+      "path": "ui/unit-icons/unit_icon_02.png",
+      "sha256": "da3cc7e722590d912a2ca2f5e8d2b771809c4fb93d8081e643562b9923cebf50",
+      "role": "unit_icon"
+    },
+    {
+      "path": "ui/unit-icons/unit_icon_03.png",
+      "sha256": "bd1005a4fb282dfadbc08c88bd7e1f44ed31d2ae7ed013c1944e2a215d4aad32",
+      "role": "unit_icon"
+    },
+    {
+      "path": "ui/unit-icons/unit_icon_04.png",
+      "sha256": "f58e805bbcfc94c34a9dd6af8b833dbcd2c85c96c5b917f734347b13ad22d67a",
+      "role": "unit_icon"
+    },
+    {
+      "path": "ui/unit-icons/unit_icon_05.png",
+      "sha256": "986ef7ef9e6c2cbef0f4a40183e15d9546bfafd980e74afad6531dda0acaaddc",
+      "role": "unit_icon"
+    },
+    {
+      "path": "ui/unit-icons/unit_icon_06.png",
+      "sha256": "6e4925f0ed1e7727841224f55c73cc214ffd98628d5987e06b2cce8fa46db50e",
+      "role": "unit_icon"
+    },
+    {
+      "path": "ui/unit-icons/unit_icon_07.png",
+      "sha256": "88cb408ca9e53944b98762a54ea5bcb06273f446e83f5e2611cbe7ba407d7525",
+      "role": "unit_icon"
+    },
+    {
+      "path": "ui/unit-icons/unit_icon_08.png",
+      "sha256": "739720b07c79aac55ea37d41f23ecc7d952c56257e3e2c1554a861f4183b3cb6",
+      "role": "unit_icon"
+    }
+  ]
+}

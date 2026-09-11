@@ -1,0 +1,54 @@
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "shiny-colors-pet"
+version = "0.0.1"
+description = "Windows desktop companion for THE IDOLM@STER SHINY COLORS"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "GPL-3.0-only"
+dependencies = ["Pillow>=11,<13", "PyYAML>=6.0.2,<7"]
+
+[project.optional-dependencies]
+dev = [
+  "mypy>=1.11,<2",
+  "psutil>=6.1,<8",
+  "pytest>=8.3,<9",
+  "pytest-qt>=4.4,<5",
+  "ruff>=0.9,<1",
+  "types-PyYAML>=6.0.12,<7",
+  "types-psutil>=6.1,<8",
+]
+webengine = ["PySide6>=6.8,<7"]
+voice = ["numpy>=1.23,<2.3", "sounddevice>=0.4.6,<1", "soundfile>=0.12.1,<1"]
+packaging = ["cx-Freeze>=8.4,<9"]
+
+[project.scripts]
+shiny-pet-asset-audit = "shiny_pet.models.asset_audit:main"
+shiny-pet = "shiny_pet.app.companion_app:main"
+shiny-pet-manifest-candidate = "shiny_pet.models.autodetect:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["shiny_pet"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-markers"
+testpaths = ["tests"]
+markers = [
+  "integration: requires an optional renderer or platform dependency",
+  "performance: records resource measurements and may be slow",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+packages = ["shiny_pet"]

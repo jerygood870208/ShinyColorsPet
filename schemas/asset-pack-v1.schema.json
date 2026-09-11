@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jerygood870208/ShinyColorsPet/schemas/asset-pack-v1.schema.json",
+  "title": "ShinyColorsPet asset pack v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "pack_id", "review", "files"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "pack_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$",
+      "maxLength": 100
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {"enum": ["pending", "approved", "internal_only", "rejected"]},
+        "reviewer": {"type": "string", "maxLength": 200},
+        "reviewed_on": {"type": "string", "format": "date"},
+        "copyright_owner": {"type": "string", "maxLength": 500},
+        "source_url": {"type": "string", "format": "uri", "maxLength": 1000},
+        "license": {"type": "string", "maxLength": 500},
+        "redistribution_scope": {
+          "enum": ["none", "source_only", "packaged_only", "source_and_packaged"]
+        },
+        "notice": {"type": "string", "maxLength": 4000}
+      }
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256", "role"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\]+$",
+            "maxLength": 500
+          },
+          "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "role": {
+            "enum": [
+              "model_skeleton", "model_atlas", "model_texture", "character_portrait",
+              "profile_background", "chat_background", "chat_icon", "unit_icon",
+              "voice_reference", "voice_transcript", "license_notice", "other"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+

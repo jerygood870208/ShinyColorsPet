@@ -1,0 +1,58 @@
+# Python and test output
+__pycache__/
+*.py[codz]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+build/
+!vendor/spine-runtime-3.6/spine-ts/build/
+!vendor/spine-runtime-3.6/spine-ts/build/spine-webgl.js
+dist/
+*.egg-info/
+
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+*_API_KEY.txt
+*.pem
+*.key
+
+# Local runtime and generated state
+instance/
+*.sqlite3
+*.sqlite3-*
+*.sqlite
+*.db
+*.log
+.codex-remote-attachments/
+
+# Non-public development inputs. A release must use the explicit allowlist instead.
+assets/
+!assets/
+assets/*
+!assets/icon.png
+!assets/icon.ico
+local-assets/
+characters/
+test_spine_data/
+spine-runtimes-*/
+Qwen*TTS*/
+tools/spikes/
+
+# Common model/media payloads are denied by default.
+*.atlas
+*.skel
+*.moc
+*.moc3
+*.model3.json
+*.wav
+*.mp3
+*.m4a
+!audio_reference/
+!audio_reference/**
+/tests

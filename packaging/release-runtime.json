@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "files": [
+    {
+      "path": "vendor/spine-runtime-3.6/LICENSE",
+      "sha256": "d2af98ecac7e4bb6e4c4491fc734db7762b94626b18bcc87c7eac6febd86e1b5"
+    },
+    {
+      "path": "vendor/spine-runtime-3.6/spine-ts/README.md",
+      "sha256": "c4af9b48aef0226f66329a75fa372f526a97d726fe8cc972f3a06fa6f66987d9"
+    },
+    {
+      "path": "vendor/spine-runtime-3.6/spine-ts/build/spine-webgl.js",
+      "sha256": "2883daee81ae60b25f6205b83feb82b76812bf63cfdf0886f04f390b12891794"
+    }
+  ]
+}
