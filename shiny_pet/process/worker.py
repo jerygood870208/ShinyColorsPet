@@ -126,7 +126,9 @@ def main() -> int:
         if spec["mode"] == "spine":
             payload["capabilities"] = asdict(window.renderer.capabilities)
             payload["character_id"] = window.manifest.character_id
-            payload["semantic_actions"] = sorted(window.manifest.animation_groups)
+            payload["semantic_actions"] = sorted(
+                key for key, choices in window.manifest.animation_groups.items() if choices
+            )
             payload["semantic_expressions"] = sorted(window.manifest.expressions)
         else:
             payload["character_id"] = Path(spec["path"]).stem
@@ -199,7 +201,12 @@ def main() -> int:
                     if not isinstance(name, str):
                         raise ValueError("gesture name must be text")
                     if spec["mode"] == "spine":
-                        if window.animation.play_gesture(name) is None:
+                        preferred = message.get("preferred_animation", "")
+                        if not isinstance(preferred, str):
+                            raise ValueError("preferred animation must be text")
+                        if window.animation.play_gesture(
+                            name, preferred_animation=preferred
+                        ) is None:
                             raise ValueError(f"gesture semantic could not be applied: {name}")
                     else:
                         window.renderer.play(name)

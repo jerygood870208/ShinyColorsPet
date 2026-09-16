@@ -6,6 +6,8 @@ from typing import Any
 
 from PySide6.QtWidgets import QFormLayout, QLineEdit, QSpinBox, QTextEdit
 
+from shiny_pet.agent import normalize_month_day
+
 from ._shared import _card, _heading, _save_button
 
 
@@ -25,7 +27,7 @@ def _install_producer_profile(panel: Any) -> None:
     )
     name = QLineEdit(str(panel.settings.get("producer_name", "")))
     birthday = QLineEdit(str(panel.settings.get("producer_birthday", "")))
-    birthday.setPlaceholderText("例如：3月19日")
+    birthday.setPlaceholderText("MM-DD（例如：03-19）")
     age = QSpinBox()
     age.setRange(0, 150)
     age.setSpecialValueText("未填寫")
@@ -42,7 +44,11 @@ def _install_producer_profile(panel: Any) -> None:
 
     def save() -> None:
         panel.settings["producer_name"] = name.text().strip()
-        panel.settings["producer_birthday"] = birthday.text().strip()
+        normalized = normalize_month_day(birthday.text())
+        if birthday.text().strip() and not normalized.replace("-", "").isdigit():
+            raise ValueError("生日請使用 MM-DD，例如 03-19。")
+        panel.settings["producer_birthday"] = normalized
+        birthday.setText(normalized)
         panel.settings["producer_age"] = age.value()
         panel.settings["producer_details"] = details.toPlainText().strip()
         panel.persist()

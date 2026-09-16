@@ -40,10 +40,17 @@ class WebEngineProbe:
 
 
 def bundled_runtime_root() -> Path:
-    """Return the minimal, separately licensed runtime shipped with the application."""
+    """Return the packaged runtime, or the licensed source-checkout runtime."""
     if getattr(sys, "frozen", False):
         return Path(sys.executable).resolve().parent / "vendor" / "spine-runtime-3.6"
-    return Path(__file__).resolve().parents[2] / "vendor" / "spine-runtime-3.6"
+    project_root = Path(__file__).resolve().parents[2]
+    packaged_layout = project_root / "vendor" / "spine-runtime-3.6"
+    if packaged_layout.is_dir():
+        return packaged_layout
+    # The separately cloned Esoteric Software repository uses this directory
+    # name during source development.  main.py previously ignored it unless
+    # callers supplied --runtime-root explicitly, making every worker fail.
+    return project_root / "spine-runtimes-3.6"
 
 
 def probe_webengine(asset_dir: Path, runtime_root: Path | None = None) -> WebEngineProbe:

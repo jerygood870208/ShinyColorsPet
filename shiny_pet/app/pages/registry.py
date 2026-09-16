@@ -6,7 +6,10 @@ from typing import Any
 
 from shiny_pet.i18n import tr
 
+from .agent_lore import _install_agent_lore
+from .agent_planner import _install_agent_planner
 from .asr_settings import _install_asr
+from .character_knowledge import _install_character_knowledge
 from .chat_history import _install_chat_history
 from .data_management import _install_data_management
 from .llm_settings import _install_llm
@@ -15,6 +18,7 @@ from .memory_album import _install_memory_album
 from .persona_settings import _install_persona
 from .producer_profile import _install_producer_profile
 from .relationship_guide import _install_relationship_guide
+from .reminders import _install_reminders
 from .statistics import _install_statistics
 from .tts_settings import _install_tts
 from .window_settings import _install_floating
@@ -32,8 +36,11 @@ def install_settings_pages(panel: Any) -> None:
     panel.nav_buttons["assets"].setText(tr("模型與資產"))
 
     _install_memory(panel)
+    _install_agent_lore(panel)
+    _install_character_knowledge(panel)
     _install_relationship_guide(panel)
-    # _install_reminders(panel)  # Alarm / Pomodoro is not release-ready yet.
+    _install_reminders(panel)
+    _install_agent_planner(panel)
     _install_chat_history(panel)
     _install_memory_album(panel)
     _install_statistics(panel)

@@ -2,14 +2,38 @@
 
 from __future__ import annotations
 
+import calendar
+import re
 from copy import deepcopy
+from datetime import datetime
 from typing import Any
+
+
+def _normalize_birthday(value: object) -> str:
+    text = " ".join(str(value or "").strip().split())
+    numeric = re.fullmatch(r"(\d{1,2})\s*(?:/|-|月)\s*(\d{1,2})\s*日?", text)
+    if numeric:
+        month, day = int(numeric.group(1)), int(numeric.group(2))
+    else:
+        names = {name.casefold(): index for index, name in enumerate(calendar.month_name) if name}
+        names.update(
+            {name.casefold(): index for index, name in enumerate(calendar.month_abbr) if name}
+        )
+        english = re.fullmatch(r"([A-Za-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?", text, re.IGNORECASE)
+        if not english or english.group(1).casefold() not in names:
+            return text
+        month, day = names[english.group(1).casefold()], int(english.group(2))
+    try:
+        datetime(2024, month, day)
+    except ValueError:
+        return text
+    return f"{month:02d}-{day:02d}"
 
 
 def migrate(payload: dict[str, Any]) -> dict[str, Any]:
     result = deepcopy(payload)
     version = result.get("settings_schema_version", 0)
-    if type(version) is not int or version not in (0, 1):
+    if type(version) is not int or version not in (0, 1, 2):
         raise ValueError(f"Unsupported settings schema: {version!r}")
     if version == 0:
         mapping = {
@@ -39,6 +63,11 @@ def migrate(payload: dict[str, Any]) -> dict[str, Any]:
         # The reference uses 0 as auto scale, not a zero-sized window.
         if result.get("model_scale") == 0:
             result["model_scale"] = 1.0
+    # Keep the on-disk marker compatible with the previous public build.  The
+    # v2 change only added an idempotent birthday normalization and did not
+    # introduce a representation that older readers cannot safely preserve.
+    # Older builds reject an unknown schema before they get a chance to ignore
+    # the newer optional keys, so writing v1 here permits side-by-side use.
     result["settings_schema_version"] = 1
     result.setdefault("ui_language", "zh-TW")
     result.setdefault("renderer_fps", 60)
@@ -55,12 +84,14 @@ def migrate(payload: dict[str, Any]) -> dict[str, Any]:
     result.setdefault("catalog", [])
     result.setdefault("asset_pack_roots", [])
     result.setdefault("character_default_outfits", {})
+    result.setdefault("character_semantic_preferences", {})
     result.setdefault("chat_history_limit", 24)
     result.setdefault("chat_debug_enabled", False)
     # POV profiles were removed in favour of one local producer profile.
     result.pop("pov_name", None)
     result.setdefault("producer_name", "")
     result.setdefault("producer_birthday", "")
+    result["producer_birthday"] = _normalize_birthday(result["producer_birthday"])
     result.setdefault("producer_age", 0)
     result.setdefault("producer_details", "")
     result.setdefault("llm_api_url", "")
@@ -107,6 +138,17 @@ def migrate(payload: dict[str, Any]) -> dict[str, Any]:
     result.setdefault("screen_awareness_include_window_title", False)
     result.setdefault("screen_awareness_max_screenshot_width", 1280)
     result.setdefault("reminders", [])
+    result.pop("agent_tasks", None)
+    result.setdefault("character_weekly_routines", [])
+    result.setdefault("character_calendar", [])
+    result.setdefault("character_diaries", [])
+    for retired_key in (
+        "google_calendar_enabled",
+        "google_calendar_credentials",
+        "google_calendar_events",
+        "google_calendar_last_sync",
+    ):
+        result.pop(retired_key, None)
     result.setdefault("mcp_servers", [])
     result.setdefault("chat_integration_enabled", False)
     result.setdefault("chat_integration_host", "127.0.0.1")

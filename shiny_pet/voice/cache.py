@@ -40,6 +40,27 @@ class VoiceCache:
         except OSError:
             return None
 
+    def contains(self, key: str) -> bool:
+        return (self.root / Path(key).name).is_file()
+
+    def timestamped_entries(self) -> list[tuple[str, float]]:
+        """Return cache keys with generation times encoded in current filenames."""
+        if not self.root.is_dir():
+            return []
+        entries: list[tuple[str, float]] = []
+        for path in self.root.iterdir():
+            if not path.is_file() or path.suffix.lower() not in {".wav", ".mp3"}:
+                continue
+            try:
+                timestamp = int(path.name.split("-", 1)[0]) / 1_000_000_000
+            except (ValueError, IndexError):
+                try:
+                    timestamp = path.stat().st_mtime
+                except OSError:
+                    continue
+            entries.append((path.name, timestamp))
+        return entries
+
     def trim(self) -> None:
         if self.max_bytes is None or not self.root.is_dir():
             return

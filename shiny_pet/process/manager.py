@@ -148,7 +148,9 @@ class ProcessManager(QObject):
         data = encode(kind, **payload)
         return worker.process.write(data) == len(data)
 
-    def semantic(self, pet_id: str, kind: str, key: str) -> bool:
+    def semantic(
+        self, pet_id: str, kind: str, key: str, *, preferred_animation: str = ""
+    ) -> bool:
         """Send only a renderer-neutral key advertised by that worker."""
         worker = self.workers[pet_id]
         available = (worker.semantic_expressions if kind == "expression"
@@ -156,7 +158,7 @@ class ProcessManager(QObject):
         if key not in available:
             self.error.emit(f"{pet_id}: unknown semantic {kind} key ignored: {key}")
             return False
-        return self.send(pet_id, kind, name=key)
+        return self.send(pet_id, kind, name=key, preferred_animation=preferred_animation)
 
     def stop(self, pet_id: str) -> None:
         worker = self.workers[pet_id]

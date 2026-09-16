@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import replace
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any
 
 from PySide6.QtCore import QDateTime, Qt
@@ -18,9 +18,9 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QListWidget,
     QPushButton,
-    QSpinBox,
 )
 
+from shiny_pet.i18n import tr
 from shiny_pet.reminders import Reminder
 
 from ._shared import _card, _character_combo, _heading, _save_button
@@ -28,7 +28,7 @@ from ._shared import _card, _character_combo, _heading, _save_button
 
 def _install_reminders(panel: Any) -> None:
     page = panel.add_navigation_page(
-        "reminders", "reminders", "鬧鐘／番茄鐘", "鬧鐘／番茄鐘", "由指定偶像提供定時提醒與專注陪伴"
+        "reminders", "alarm", "鬧鐘與提醒", "鬧鐘與提醒", "由指定偶像提供定時提醒"
     )
     _, layout = _card(page)
     _heading(layout, "新增提醒")
@@ -55,8 +55,8 @@ def _install_reminders(panel: Any) -> None:
     def refresh() -> None:
         reminder_list.clear()
         for item in panel.reminder_queue.reminders:
-            repeat = "、".join(str(day + 1) for day in item.repeat_days) or "單次"
-            state = "啟用" if item.enabled else "停用"
+            repeat = "、".join(str(day + 1) for day in item.repeat_days) or tr("單次")
+            state = tr("已啟用") if item.enabled else tr("已停用")
             row = f"{item.at:%Y-%m-%d %H:%M} · {repeat} · {state} · {item.text}"
             reminder_list.addItem(row)
             reminder_list.item(reminder_list.count() - 1).setData(Qt.ItemDataRole.UserRole, item.id)
@@ -157,35 +157,4 @@ def _install_reminders(panel: Any) -> None:
     edit_reminder.clicked.connect(update_selected)
     delete_reminder.clicked.connect(delete_selected)
     test_reminder.clicked.connect(test_selected)
-    _, pomo_layout = _card(page)
-    _heading(pomo_layout, "番茄鐘", "建立一個專注結束提醒；完成時會由選取偶像通知。")
-    minutes = QSpinBox()
-    minutes.setRange(1, 180)
-    minutes.setValue(25)
-    purpose = QLineEdit()
-    purpose.setPlaceholderText("這次要專注的事情")
-    pomo_form = QFormLayout()
-    pomo_form.addRow("專注分鐘", minutes)
-    pomo_form.addRow("說明", purpose)
-    pomo_layout.addLayout(pomo_form)
-
-    def start_pomodoro() -> None:
-        label = purpose.text().strip() or "專注時間"
-        item = Reminder(
-            uuid.uuid4().hex,
-            f"{label}完成了，休息一下吧！",
-            datetime.now() + timedelta(minutes=minutes.value()),
-            (),
-            str(character.currentData() or ""),
-        )
-        panel.reminder_queue.reminders.append(item)
-        panel.save_reminders()
-        refresh()
-
-    _save_button(
-        pomo_layout,
-        "開始番茄鐘",
-        start_pomodoro,
-        success_text="番茄鐘已開始",
-    )
     refresh()

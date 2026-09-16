@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import date, datetime
 from pathlib import Path
 
@@ -16,6 +17,8 @@ from PySide6.QtGui import (
     QPen,
     QPixmap,
     QResizeEvent,
+    QShowEvent,
+    QWheelEvent,
 )
 from PySide6.QtWidgets import (
     QFrame,
@@ -39,7 +42,7 @@ from .database import Message
 
 
 def _round_pixmap(source: QPixmap, size: int) -> QPixmap:
-    """Return a smoothly scaled, circular copy of an avatar."""
+    """Return a circular avatar with its border drawn inside the image bounds."""
     scaled = source.scaled(
         size,
         size,
@@ -54,6 +57,12 @@ def _round_pixmap(source: QPixmap, size: int) -> QPixmap:
     clip.addEllipse(0, 0, size, size)
     painter.setClipPath(clip)
     painter.drawPixmap(0, 0, scaled)
+    painter.setClipping(False)
+    border = QPen(QColor("white"), 2.0)
+    border.setCosmetic(True)
+    painter.setPen(border)
+    painter.setBrush(Qt.BrushStyle.NoBrush)
+    painter.drawEllipse(QRectF(1, 1, size - 2, size - 2))
     painter.end()
     return result
 
@@ -103,6 +112,7 @@ class ConversationView(QScrollArea):
 
     replay_requested = Signal(str)
     retry_requested = Signal(str)
+    older_history_requested = Signal()
 
     def __init__(self, display_name: str, avatar: QPixmap | None = None,
                  background: Path | None = None) -> None:
@@ -129,15 +139,21 @@ class ConversationView(QScrollArea):
         self.messages = QVBoxLayout(self.content)
         self.messages.setContentsMargins(18, 20, 18, 20)
         self.messages.setSpacing(16)
-        self.messages.setAlignment(Qt.AlignmentFlag.AlignTop)
+        # Keep short conversations next to the composer; once the transcript is
+        # taller than the viewport, normal scrolling still exposes older rows.
+        self.messages.setAlignment(Qt.AlignmentFlag.AlignBottom)
         self.setWidget(self.content)
         self._bubbles: list[QLabel] = []
         self._last_message_date: date | None = None
         self._scroll_timer = QTimer(self)
         self._scroll_timer.setSingleShot(True)
-        self._scroll_timer.timeout.connect(self._scroll_to_bottom)
+        self._scroll_timer.timeout.connect(self._finish_scroll_to_bottom)
+        self._can_load_older = False
+        self._top_request_ready = False
 
     def clear(self) -> None:
+        self._scroll_timer.stop()
+        self._top_request_ready = False
         while self.messages.count():
             item = self.messages.takeAt(0)
             if item is None:
@@ -148,8 +164,21 @@ class ConversationView(QScrollArea):
         self._bubbles.clear()
         self._last_message_date = None
 
-    def append_message(self, role: str, text: str, replay_key: str = "",
-                       retry_text: str = "", created_at: str = "") -> None:
+    def append_message(
+        self,
+        role: str,
+        text: str,
+        replay_key: str = "",
+        retry_text: str = "",
+        created_at: str = "",
+        *,
+        auto_scroll: bool = True,
+    ) -> None:
+        if auto_scroll:
+            # Layout changes can temporarily leave the old scroll value near the
+            # top. Disarm pagination before adding the row so that automatic
+            # bottom scrolling can never look like a user history request.
+            self._top_request_ready = False
         moment = stored_as_computer_local(created_at) if created_at else None
         if moment is None:
             moment = computer_local_now().astimezone()
@@ -201,8 +230,10 @@ class ConversationView(QScrollArea):
             avatar.setFixedSize(42, 42)
             avatar.setAlignment(Qt.AlignmentFlag.AlignCenter)
             if self.avatar is not None and not self.avatar.isNull():
+                avatar.setProperty("hasAvatarImage", "true")
                 avatar.setPixmap(_round_pixmap(self.avatar, 42))
             else:
+                avatar.setProperty("hasAvatarImage", "false")
                 avatar.setText(self.display_name[:1])
 
             stack = QVBoxLayout()
@@ -243,13 +274,54 @@ class ConversationView(QScrollArea):
         self.messages.activate()
         self.content.adjustSize()
 
-        self.ensureWidgetVisible(row, 0, 0)
-        self._scroll_to_bottom()
-        self._scroll_timer.start(40)
+        if auto_scroll:
+            self.ensureWidgetVisible(row, 0, 0)
+            self.scroll_to_bottom_later()
 
     def _scroll_to_bottom(self) -> None:
         bar = self.verticalScrollBar()
         bar.setValue(bar.maximum())
+
+    def _finish_scroll_to_bottom(self) -> None:
+        self._scroll_to_bottom()
+        self._top_request_ready = True
+
+    def scroll_to_bottom_later(self) -> None:
+        self._top_request_ready = False
+        self._scroll_to_bottom()
+        self._scroll_timer.start(40)
+
+    def set_can_load_older(self, enabled: bool) -> None:
+        self._can_load_older = bool(enabled)
+
+    def restore_after_prepend(self, previous_maximum: int, previous_value: int) -> None:
+        self._top_request_ready = False
+
+        def restore() -> None:
+            bar = self.verticalScrollBar()
+            added_height = max(0, bar.maximum() - previous_maximum)
+            bar.setValue(previous_value + added_height)
+            self._top_request_ready = True
+
+        QTimer.singleShot(40, restore)
+
+    def _request_older_near_top(self, value: int) -> None:
+        bar = self.verticalScrollBar()
+        upper_third = bar.minimum() + (bar.maximum() - bar.minimum()) // 3
+        if (
+            self._can_load_older
+            and self._top_request_ready
+            and bar.maximum() > bar.minimum()
+            and value <= upper_third
+        ):
+            self._top_request_ready = False
+            self.older_history_requested.emit()
+
+    def wheelEvent(self, event: QWheelEvent) -> None:
+        super().wheelEvent(event)
+        # Pagination responds only to deliberate user scrolling. Scroll values
+        # also change during relayout and automatic bottom positioning.
+        self._request_older_near_top(self.verticalScrollBar().value())
 
     def _update_bubble_widths(self) -> None:
         maximum = max(190, int(self.viewport().width() * 0.72))
@@ -259,6 +331,12 @@ class ConversationView(QScrollArea):
     def resizeEvent(self, event: QResizeEvent) -> None:
         super().resizeEvent(event)
         self._update_bubble_widths()
+
+    def showEvent(self, event: QShowEvent) -> None:
+        super().showEvent(event)
+        # History is populated while its parent window is still hidden, when the
+        # scroll range is usually zero. Retry after the first visible layout pass.
+        self.scroll_to_bottom_later()
 
 
 class IdolChatWindow(QWidget):
@@ -270,6 +348,7 @@ class IdolChatWindow(QWidget):
     debug_changed = Signal(bool)
     replay_requested = Signal(str, str)
     retry_message_requested = Signal(str, str)
+    older_history_requested = Signal(str, int)
 
     def __init__(
         self,
@@ -285,6 +364,9 @@ class IdolChatWindow(QWidget):
         super().__init__(None, Qt.WindowType.Window)
         self.character_id = character_id
         self.display_name = display_name
+        self._history_messages: list[Message] = []
+        self._replay_available: Callable[[str], bool] | None = None
+        self._has_older_history = False
         self.setObjectName("IdolChatWindow")
         self.setWindowTitle(f"{display_name} — {tr('聊天室')}")
         self.resize(430, 720)
@@ -313,8 +395,10 @@ class IdolChatWindow(QWidget):
         portrait.setFixedSize(46, 46)
         portrait.setAlignment(Qt.AlignmentFlag.AlignCenter)
         if avatar_pixmap is not None and not avatar_pixmap.isNull():
+            portrait.setProperty("hasAvatarImage", "true")
             portrait.setPixmap(_round_pixmap(avatar_pixmap, 46))
         else:
+            portrait.setProperty("hasAvatarImage", "false")
             portrait.setText(display_name[:1])
         title_box = QVBoxLayout()
         title_box.setSpacing(1)
@@ -363,6 +447,7 @@ class IdolChatWindow(QWidget):
         self.history.retry_requested.connect(
             lambda text: self.retry_message_requested.emit(self.character_id, text)
         )
+        self.history.older_history_requested.connect(self._request_older_history)
         root.addWidget(self.history, 1)
 
         controls = QWidget(self)
@@ -423,10 +508,12 @@ class IdolChatWindow(QWidget):
             QPushButton#ChatBackButton:hover { color: #e9fbff; }
             QToolButton#ChatSettingsButton { border: 0; background: transparent; color: white;
                 font-size: 23px; font-weight: 700; padding: 6px 9px; }
-            QLabel#ChatAvatar, QLabel#MessageAvatar { background: white;
-                border: 2px solid rgba(255,255,255,0.9); border-radius: 23px;
+            QLabel#ChatAvatar, QLabel#MessageAvatar { background: transparent; border: 0;
                 color: #279fc8; font-size: 18px; font-weight: 800; }
-            QLabel#MessageAvatar { border-radius: 21px; }
+            QLabel#ChatAvatar[hasAvatarImage="false"],
+            QLabel#MessageAvatar[hasAvatarImage="false"] { background: white;
+                border: 2px solid rgba(255,255,255,0.9); border-radius: 23px; }
+            QLabel#MessageAvatar[hasAvatarImage="false"] { border-radius: 21px; }
             QLabel#ChatPersonName { color: white; font-size: 17px; font-weight: 800; }
             QLabel#ChatStatus { color: #eaffff; font-size: 11px; }
             QScrollArea#Conversation { background: #fff9dc; border: 0; }
@@ -476,10 +563,51 @@ class IdolChatWindow(QWidget):
         self.input.clear()
         self.send_requested.emit(self.character_id, text)
 
-    def load_history(self, messages: list[Message]) -> None:
+    def load_history(
+        self,
+        messages: list[Message],
+        replay_available: Callable[[str], bool] | None = None,
+        *,
+        has_older: bool = False,
+    ) -> None:
+        self._history_messages = list(messages)
+        self._replay_available = replay_available
+        self._has_older_history = has_older
+        self._render_history()
+        self.history.set_can_load_older(has_older)
+        self.history.scroll_to_bottom_later()
+
+    def load_older_history(self, messages: list[Message], *, has_older: bool) -> None:
+        bar = self.history.verticalScrollBar()
+        previous_maximum = bar.maximum()
+        previous_value = bar.value()
+        self._history_messages = list(messages)
+        self._has_older_history = has_older
+        self._render_history()
+        self.history.set_can_load_older(has_older)
+        self.history.restore_after_prepend(previous_maximum, previous_value)
+
+    def _render_history(self) -> None:
         self.history.clear()
-        for message in messages:
-            self.append_message(message.role, message.content, created_at=message.created_at)
+        for message in self._history_messages:
+            replay_key = message.voice_cache_key
+            if (
+                replay_key
+                and self._replay_available is not None
+                and not self._replay_available(replay_key)
+            ):
+                replay_key = ""
+            self.history.append_message(
+                message.role,
+                message.content,
+                replay_key,
+                created_at=message.scheduled_for or message.created_at,
+                auto_scroll=False,
+            )
+
+    def _request_older_history(self) -> None:
+        if self._has_older_history:
+            self.older_history_requested.emit(self.character_id, len(self._history_messages))
 
     def append_message(
         self, role: str, content: str, replay_key: str = "", created_at: str = ""

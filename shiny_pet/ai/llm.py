@@ -70,32 +70,84 @@ class OpenAICompatibleClient:
     def complete(self, messages: list[dict[str, str]], cancel: threading.Event) -> str:
         if cancel.is_set():
             raise RuntimeError("request cancelled")
-        body = json.dumps(
-            {"model": self.config.model, "messages": messages, "stream": False,
-             "temperature": self.config.temperature, "max_tokens": self.config.max_tokens},
-            ensure_ascii=False,
-        ).encode("utf-8")
+        request_payload: dict[str, Any] = {
+            "model": self.config.model,
+            "messages": messages,
+            "stream": False,
+            "temperature": self.config.temperature,
+            "max_tokens": self.config.max_tokens,
+        }
         headers = {"Content-Type": "application/json", "User-Agent": "ShinyColorsPet/0.0.1"}
         if self.config.api_key:
             headers["Authorization"] = "Bearer " + self.config.api_key
-        request = urllib.request.Request(self.config.endpoint(), body, headers, method="POST")
-        try:
-            with urllib.request.urlopen(request, timeout=self.config.timeout_seconds) as response:
-                payload: Any = json.loads(response.read().decode("utf-8"))
-        except urllib.error.HTTPError as exc:
-            detail = exc.read(512).decode("utf-8", errors="replace")
-            raise RuntimeError(f"LLM HTTP {exc.code}: {detail}") from exc
-        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-            raise RuntimeError(f"LLM request failed: {exc}") from exc
-        if cancel.is_set():
-            raise RuntimeError("request cancelled")
-        try:
-            content = payload["choices"][0]["message"]["content"]
-        except (KeyError, IndexError, TypeError) as exc:
-            raise RuntimeError("LLM response has no assistant message") from exc
-        if not isinstance(content, str) or not content.strip():
-            raise RuntimeError("LLM returned an empty assistant message")
-        return content.strip()
+        for attempt in range(2):
+            if attempt:
+                request_payload = {
+                    **request_payload,
+                    "messages": [
+                        *messages,
+                        {
+                            "role": "system",
+                            "content": (
+                                "The previous generation returned no assistant content. "
+                                "Produce a non-empty response now and follow the existing output "
+                                "or application-tool contract exactly."
+                            ),
+                        },
+                    ],
+                    "temperature": 0,
+                }
+            body = json.dumps(request_payload, ensure_ascii=False).encode("utf-8")
+            request = urllib.request.Request(self.config.endpoint(), body, headers, method="POST")
+            try:
+                with urllib.request.urlopen(
+                    request, timeout=self.config.timeout_seconds
+                ) as response:
+                    payload: Any = json.loads(response.read().decode("utf-8"))
+            except urllib.error.HTTPError as exc:
+                detail = exc.read(512).decode("utf-8", errors="replace")
+                raise RuntimeError(f"LLM HTTP {exc.code}: {detail}") from exc
+            except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+                raise RuntimeError(f"LLM request failed: {exc}") from exc
+            if cancel.is_set():
+                raise RuntimeError("request cancelled")
+            try:
+                choice = payload["choices"][0]
+                message = choice["message"]
+                content = message["content"]
+            except (KeyError, IndexError, TypeError) as exc:
+                raise RuntimeError("LLM response has no assistant message") from exc
+            if isinstance(content, str) and content.strip():
+                return content.strip()
+
+            finish_reason = choice.get("finish_reason") if isinstance(choice, dict) else None
+            usage = payload.get("usage", {}) if isinstance(payload, dict) else {}
+            completion_tokens = (
+                usage.get("completion_tokens") if isinstance(usage, dict) else None
+            )
+            message_fields = (
+                ",".join(sorted(str(key) for key in message))
+                if isinstance(message, dict)
+                else type(message).__name__
+            )
+            diagnostics = (
+                f"finish_reason={finish_reason!r}, completion_tokens={completion_tokens!r}, "
+                f"content_type={type(content).__name__}, message_fields={message_fields or 'none'}"
+            )
+            retryable = (
+                attempt == 0
+                and finish_reason in (None, "stop")
+                and completion_tokens in (None, 0)
+                and isinstance(message, dict)
+                and not message.get("refusal")
+                and not message.get("tool_calls")
+            )
+            if not retryable:
+                suffix = " after one retry" if attempt else ""
+                raise RuntimeError(
+                    f"LLM returned an empty assistant message{suffix} ({diagnostics})"
+                )
+        raise AssertionError("unreachable")
 
     def describe_image(self, data_url: str, prompt: str, cancel: threading.Event) -> str:
         if cancel.is_set():

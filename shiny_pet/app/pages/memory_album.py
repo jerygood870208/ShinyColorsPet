@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 
+from shiny_pet.i18n import tr
 from shiny_pet.local_time import format_stored_local
 
 from ._shared import _card, _character_combo
@@ -53,7 +54,7 @@ def _install_memory_album(panel: Any) -> None:
             album.addItem(f"{format_stored_local(record.created_at)} · {record.content}")
             album.item(album.count() - 1).setData(Qt.ItemDataRole.UserRole, record.id)
         if not album.count():
-            album.addItem("還沒有保存的長期記憶。")
+            album.addItem(tr("還沒有保存的長期記憶。"))
 
     character.currentIndexChanged.connect(lambda _index: refresh())
     search.textChanged.connect(lambda _text: refresh())

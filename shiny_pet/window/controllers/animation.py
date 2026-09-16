@@ -17,6 +17,7 @@ class Request:
     channel: str
     priority: int
     mix_seconds: float
+    preferred_animation: str = ""
 
 
 class AnimationController:
@@ -70,6 +71,7 @@ class AnimationController:
         priority: int = 0,
         queue: bool = False,
         mix_seconds: float = 0.1,
+        preferred_animation: str = "",
     ) -> PlaybackToken | None:
         channel = (
             "base"
@@ -79,7 +81,8 @@ class AnimationController:
         if self._exclusive:
             mix_seconds = self._policy_mix
         return self.play_group(
-            semantic_name, channel=channel, priority=priority, queue=queue, mix_seconds=mix_seconds
+            semantic_name, channel=channel, priority=priority, queue=queue,
+            mix_seconds=mix_seconds, preferred_animation=preferred_animation,
         )
 
     def start_drag(self) -> PlaybackToken | None:
@@ -109,6 +112,7 @@ class AnimationController:
         priority: int = 0,
         queue: bool = False,
         mix_seconds: float = 0.1,
+        preferred_animation: str = "",
     ) -> PlaybackToken | None:
         if not math.isfinite(mix_seconds) or mix_seconds < 0:
             raise ValueError("mix_seconds must be finite and non-negative")
@@ -117,7 +121,7 @@ class AnimationController:
         ):
             logging.getLogger(__name__).warning("Unavailable semantic action: %s", semantic_name)
             return None
-        request = Request(semantic_name, channel, priority, mix_seconds)
+        request = Request(semantic_name, channel, priority, mix_seconds, preferred_animation)
         active = self._active.get(channel)
         if active and (queue or priority < active[1].priority):
             pending = self._queues.setdefault(channel, [])
@@ -130,7 +134,11 @@ class AnimationController:
 
     def _play(self, request: Request) -> PlaybackToken:
         choices = self._manifest.animation_group(request.semantic_name)
-        choice = self._rng.choices(choices, weights=[c.weight for c in choices], k=1)[0]
+        choice = next(
+            (item for item in choices if item.name == request.preferred_animation), None
+        )
+        if choice is None:
+            choice = self._rng.choices(choices, weights=[c.weight for c in choices], k=1)[0]
         token = self._renderer.play(
             request.channel, choice.name, loop=choice.loop, mix_seconds=request.mix_seconds
         )

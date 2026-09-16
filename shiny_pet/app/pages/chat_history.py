@@ -51,7 +51,8 @@ def _install_chat_history(panel: Any) -> None:
         )
         for item in records:
             speaker = "你" if item.role == "user" else character.currentText()
-            history.addItem(f"{speaker}　{format_stored_local(item.created_at)}\n{item.content}")
+            effective_time = item.scheduled_for or item.created_at
+            history.addItem(f"{speaker}　{format_stored_local(effective_time)}\n{item.content}")
             history.item(history.count() - 1).setData(Qt.ItemDataRole.UserRole, item.id)
 
     def delete_selected() -> None:
@@ -88,6 +89,9 @@ def _install_chat_history(panel: Any) -> None:
                             "role": item.role,
                             "content": item.content,
                             "created_at": item.created_at,
+                            "source": item.source,
+                            "trigger_event_type": item.trigger_event_type,
+                            "scheduled_for": item.scheduled_for,
                         }
                         for item in reversed(records)
                     ],
@@ -98,7 +102,7 @@ def _install_chat_history(panel: Any) -> None:
             )
         else:
             lines = [
-                f"## {item.created_at} · {item.role}\n\n{item.content}\n"
+                f"## {item.scheduled_for or item.created_at} · {item.role}\n\n{item.content}\n"
                 for item in reversed(records)
             ]
             target.write_text("\n".join(lines), encoding="utf-8")

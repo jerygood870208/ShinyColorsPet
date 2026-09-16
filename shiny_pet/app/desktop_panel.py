@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
 import sys
 from collections.abc import Callable
 from copy import deepcopy
@@ -44,6 +45,7 @@ from PySide6.QtWidgets import (
 
 from shiny_pet.app_paths import application_data_root, migrate_duplicated_data_root
 from shiny_pet.i18n import SUPPORTED_LANGUAGES, set_locale, tr, tr_dynamic, trf
+from shiny_pet.models.abilities import resolve_abilities
 from shiny_pet.models.managed_models import (
     ManagedModelInput,
     managed_manifest_root,
@@ -52,6 +54,7 @@ from shiny_pet.models.managed_models import (
     update_from_downloaded_folder,
     update_managed_model,
 )
+from shiny_pet.models.manifest import load_manifest
 from shiny_pet.models.runtime_catalog import (
     ModelSelection,
     RuntimeCatalog,
@@ -60,6 +63,7 @@ from shiny_pet.models.runtime_catalog import (
 )
 from shiny_pet.process.manager import ProcessManager
 from shiny_pet.settings.store import SettingsStore
+from shiny_pet.voice.tts import emotion_category, expression_choices
 
 from .pages import install_core_pages
 
@@ -135,6 +139,16 @@ def _navigation_icon(kind: str, color: str, size: int = 22) -> QIcon:
         heart.cubicTo(13, 3, 18, 4, 18, 8)
         heart.cubicTo(18, 13, 13, 16, 11, 18)
         painter.drawPath(heart)
+    elif kind == "book":
+        pages = QPainterPath(QPointF(11, 6))
+        pages.cubicTo(9, 4.5, 6, 4, 4, 4)
+        pages.lineTo(4, 17)
+        pages.cubicTo(7, 17, 9, 17.5, 11, 19)
+        pages.cubicTo(13, 17.5, 15, 17, 18, 17)
+        pages.lineTo(18, 4)
+        pages.cubicTo(16, 4, 13, 4.5, 11, 6)
+        painter.drawPath(pages)
+        painter.drawLine(QPointF(11, 6), QPointF(11, 19))
     elif kind == "relationship":
         painter.drawEllipse(QRectF(4, 4, 5, 5))
         painter.drawEllipse(QRectF(13, 4, 5, 5))
@@ -176,6 +190,19 @@ def _navigation_icon(kind: str, color: str, size: int = 22) -> QIcon:
         painter.drawRoundedRect(QRectF(3, 4, 16, 12), 3, 3)
         painter.drawLine(QPointF(7, 16), QPointF(5, 19))
         painter.drawLine(QPointF(8, 9), QPointF(14, 9))
+    elif kind == "proactive":
+        painter.drawRoundedRect(QRectF(3, 4, 16, 12), 3, 3)
+        painter.drawLine(QPointF(7, 16), QPointF(5, 19))
+        sparkle = QPainterPath(QPointF(11, 6.5))
+        sparkle.lineTo(12, 9)
+        sparkle.lineTo(14.5, 10)
+        sparkle.lineTo(12, 11)
+        sparkle.lineTo(11, 13.5)
+        sparkle.lineTo(10, 11)
+        sparkle.lineTo(7.5, 10)
+        sparkle.lineTo(10, 9)
+        sparkle.closeSubpath()
+        painter.drawPath(sparkle)
     elif kind == "tts":
         painter.drawRect(QRectF(4, 4, 6, 13))
         painter.drawLine(QPointF(6, 7), QPointF(8, 7))
@@ -213,6 +240,14 @@ def _navigation_icon(kind: str, color: str, size: int = 22) -> QIcon:
         painter.drawLine(QPointF(8, 3), QPointF(8, 7))
         painter.drawLine(QPointF(14, 3), QPointF(14, 7))
         painter.drawLine(QPointF(5, 9), QPointF(17, 9))
+    elif kind == "alarm":
+        painter.drawEllipse(QRectF(5, 6, 12, 12))
+        painter.drawLine(QPointF(11, 9), QPointF(11, 12))
+        painter.drawLine(QPointF(11, 12), QPointF(14, 14))
+        painter.drawLine(QPointF(3, 5), QPointF(7, 2))
+        painter.drawLine(QPointF(15, 2), QPointF(19, 5))
+        painter.drawLine(QPointF(7, 18), QPointF(5, 20))
+        painter.drawLine(QPointF(15, 18), QPointF(17, 20))
     elif kind == "screen_tools":
         painter.drawRoundedRect(QRectF(3, 4, 16, 12), 2, 2)
         painter.drawLine(QPointF(8, 19), QPointF(14, 19))
@@ -265,6 +300,11 @@ def persistent_pet_spec(spec: dict[str, Any]) -> dict[str, Any]:
     if all(isinstance(result.get(key), str) and result[key] for key in fields):
         result.pop("path", None)
     return result
+
+
+def pet_state_is_persistent(state: str) -> bool:
+    """Keep crashed/restoration-failed pets so a transient error cannot erase them."""
+    return state not in {"stopping", "stopped"}
 
 
 def preferred_catalog_selection(
@@ -525,7 +565,8 @@ class DesktopControlPanel(QWidget):
             (button.sizeHint().width() for button in self.nav_buttons.values()),
             default=0,
         )
-        margins = self.sidebar.layout().contentsMargins() if self.sidebar.layout() else None
+        sidebar_layout = self.sidebar.layout()
+        margins = sidebar_layout.contentsMargins() if sidebar_layout is not None else None
         horizontal_margins = margins.left() + margins.right() if margins is not None else 36
         scrollbar_width = self.style().pixelMetric(QStyle.PixelMetric.PM_ScrollBarExtent)
         required_width = button_width + horizontal_margins + scrollbar_width + 8
@@ -1004,26 +1045,116 @@ class DesktopControlPanel(QWidget):
         self.action_character_label.setText("尚未選取桌面人物")
         if worker is None:
             return
-        character_id = str(worker.spec.get("character_id", ""))
+        character_id = str(
+            worker.spec.get("character_id") or getattr(worker, "character_id", "") or pet_id
+        )
         character = self.runtime_catalog.characters.get(character_id)
         if character is not None:
             self.action_character_label.setText(self.runtime_catalog.label(character.name_key))
-        entries = [
-            *(("gesture", key, "動作") for key in sorted(worker.semantic_actions)),
-            *(("expression", key, "表情") for key in sorted(worker.semantic_expressions)),
+        if worker.spec.get("mode") != "spine":
+            entries = [("gesture", key) for key in sorted(worker.semantic_actions)]
+            for index, (kind, key) in enumerate(entries):
+                button = QPushButton(f"動作 · {key}")
+                button.setObjectName("SecondaryButton")
+                button.clicked.connect(
+                    lambda _checked=False, target=pet_id, action_kind=kind, action_key=key:
+                        self.manager.semantic(target, action_kind, action_key)
+                )
+                self.action_grid.addWidget(button, index // 3, index % 3)
+            return
+        try:
+            manifest = resolve_abilities(load_manifest(Path(str(worker.spec["path"])))).manifest
+        except (OSError, ValueError, KeyError) as exc:
+            self.action_hint.setText(f"無法讀取目前衣服的動作清單：{exc}")
+            return
+        self.action_hint.setText(tr("每個角色可為動作與表情指定固定動畫；未設定或目前衣服缺少時會隨機播放。"))
+        expression_categories = {
+            emotion_category(key) for key in worker.semantic_expressions
+        } - {""}
+        preview_entries = [
+            *(("gesture", key, "動作", [choice.name for choice in manifest.animation_group(key)])
+              for key in sorted(worker.semantic_actions)
+              if manifest.animation_group(key)),
+            *(("expression", category, "表情",
+               expression_choices(worker.semantic_expressions, category))
+              for category in sorted(expression_categories)),
         ]
-        for index, (kind, key, category) in enumerate(entries):
-            button = QPushButton(f"{category} · {key}")
-            button.setObjectName("SecondaryButton")
-            button.clicked.connect(
-                lambda _checked=False, action_kind=kind, action_key=key, target=pet_id:
-                    self.manager.semantic(target, action_kind, action_key)
+        preferences = self.settings.get("character_semantic_preferences", {})
+        character_preferences = preferences.get(character_id, {}) if isinstance(preferences, dict) else {}
+        for index, (kind, category, label, choices) in enumerate(preview_entries):
+            self.action_grid.addWidget(QLabel(f"{label} · {category}"), index, 0)
+            selector = QComboBox()
+            selector.addItem(tr("隨機"), "")
+            for choice in sorted(set(choices)):
+                selector.addItem(choice, choice)
+            configured = character_preferences.get(kind, {}).get(category, "")
+            if isinstance(configured, str) and configured and selector.findData(configured) < 0:
+                selector.addItem(f"{configured}（{tr('目前衣服不可用')}）", configured)
+            selected = selector.findData(configured)
+            selector.setCurrentIndex(max(0, selected))
+            selector.currentIndexChanged.connect(
+                lambda _index, target=character_id, selected_kind=kind,
+                selected_category=category, widget=selector:
+                    self._set_semantic_preference(
+                        target, selected_kind, selected_category, str(widget.currentData() or "")
+                    )
             )
-            self.action_grid.addWidget(button, index // 3, index % 3)
-        if not entries:
+            self.action_grid.addWidget(selector, index, 1)
+            preview = QPushButton(tr("試播"))
+            preview.setObjectName("SecondaryButton")
+            preview.clicked.connect(
+                lambda _checked=False, target=pet_id, selected_kind=kind,
+                selected_category=category:
+                    self.play_semantic_category(target, selected_kind, selected_category)
+            )
+            self.action_grid.addWidget(preview, index, 2)
+        if not preview_entries:
             empty = QLabel("模型尚未 ready，或 manifest 沒有提供可預覽的語意動作。")
             empty.setObjectName("Muted")
             self.action_grid.addWidget(empty, 0, 0)
+
+    def _set_semantic_preference(
+        self, character_id: str, kind: str, category: str, choice: str
+    ) -> None:
+        previous = deepcopy(self.settings.get("character_semantic_preferences", {}))
+        updated = deepcopy(previous)
+        categories = updated.setdefault(character_id, {}).setdefault(kind, {})
+        if choice:
+            categories[category] = choice
+        else:
+            categories.pop(category, None)
+        self.settings["character_semantic_preferences"] = updated
+        try:
+            self.persist()
+        except (OSError, ValueError):
+            self.settings["character_semantic_preferences"] = previous
+            raise
+
+    def play_semantic_category(self, pet_id: str, kind: str, category: str) -> bool:
+        worker = self.manager.workers.get(pet_id)
+        if worker is None or worker.state != "ready":
+            return False
+        character_id = str(
+            worker.spec.get("character_id") or getattr(worker, "character_id", "") or pet_id
+        )
+        preferences = self.settings.get("character_semantic_preferences", {})
+        fixed = (
+            preferences.get(character_id, {}).get(kind, {}).get(category, "")
+            if isinstance(preferences, dict) else ""
+        )
+        if kind == "expression":
+            choices = expression_choices(worker.semantic_expressions, category)
+            if choices:
+                selected = fixed if fixed in choices else random.choice(choices)
+                return self.manager.semantic(pet_id, "expression", selected)
+        elif kind == "gesture" and category in worker.semantic_actions:
+            preferred = fixed if isinstance(fixed, str) else ""
+            return self.manager.semantic(
+                pet_id, "gesture", category, preferred_animation=preferred
+            )
+        if "idle" in worker.semantic_actions:
+            return self.manager.semantic(pet_id, "gesture", "idle")
+        return False
 
     def change_selected_outfit(self) -> None:
         pet_id = self.selected()
@@ -1349,7 +1480,7 @@ class DesktopControlPanel(QWidget):
             return
         pets = []
         for worker in self.manager.workers.values():
-            if worker.state not in ("starting", "ready"):
+            if not pet_state_is_persistent(worker.state):
                 continue
             pets.append(persistent_pet_spec(worker.spec))
         self.settings["pets"] = pets

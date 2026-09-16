@@ -1,10 +1,21 @@
 """Conversation orchestration and persistence."""
 
-from .database import ChatDatabase, Memory, Message, Relationship
-from .service import ChatResult, ChatService
+from .coordinator import ChatCoordinator
+from .database import (
+    CharacterRelationRecord,
+    ChatDatabase,
+    LoreHit,
+    LoreRecord,
+    Memory,
+    Message,
+    Relationship,
+    ScheduleState,
+)
+from .service import ApplicationContext, ChatResult, ChatService, TriggerContext
 from .window import IdolChatWindow
 
 __all__ = [
-    "ChatDatabase", "ChatResult", "ChatService", "IdolChatWindow", "Memory", "Message",
-    "Relationship"
+    "ApplicationContext", "ChatCoordinator", "ChatDatabase", "ChatResult", "ChatService",
+    "CharacterRelationRecord", "IdolChatWindow", "LoreHit", "LoreRecord", "Memory",
+    "Message", "Relationship", "ScheduleState", "TriggerContext",
 ]

@@ -33,8 +33,54 @@ _IRODORI_EMOTION_CAPTIONS = {
     "smile": "笑顔で、柔らかく楽しそうに話す。",
     "sad": "悲しそうに、静かに話す。",
     "angry": "怒りを込めて、強くはっきり話す。",
+    "angry_strong": "強い怒りを込めて、鋭くはっきり話す。",
     "surprised": "驚いた様子で、勢いよく話す。",
     "neutral": "落ち着いて、自然に話す。",
+    "crying": "涙をこらえながら、声を震わせて話す。",
+    "shy": "照れくさそうに、控えめに話す。",
+    "serious": "真剣に、落ち着いた調子で話す。",
+    "troubled": "困ったように、ためらいながら話す。",
+    "afraid": "不安そうに、少し緊張して話す。",
+    "panicked": "慌てた様子で、少し早口に話す。",
+    "excited": "わくわくした様子で、弾むように話す。",
+    "smug": "得意げに、少し自信を込めて話す。",
+    "mischievous": "いたずらっぽく、軽やかに話す。",
+    "cool": "少し冷ややかに、抑えた調子で話す。",
+    "sleepy": "眠そうに、ゆっくり柔らかく話す。",
+    "thinking": "考え込みながら、ゆっくり話す。",
+    "agree": "うなずくように、穏やかに話す。",
+    "disagree": "きっぱりと、しかし自然に話す。",
+}
+
+# Generated manifests retain raw face animation names as well as semantic aliases.
+# ChatService advertises every available expression key to the LLM, so both forms
+# need a speech cue. Non-emotional eye/idle poses intentionally use neutral delivery.
+_IRODORI_EMOTION_ALIASES = {
+    alias: emotion
+    for emotion, aliases in {
+        "neutral": (
+            "wait", "wait2", "wait3", "wait4", "nothing", "left", "right",
+            "close", "close2", "close3", "close4", "close5", "close6",
+            "close7", "close8", "close9",
+        ),
+        "happy": ("joy",),
+        "smile": ("smile1", "smile2", "smile3", "smile4"),
+        "sad": ("sad2", "sad3", "down"),
+        "angry": ("anger", "anger1", "anger2", "anger3", "anger4", "rebellion1", "rebellion2"),
+        "angry_strong": ("anger_strong",),
+        "surprised": ("surp", "surp2", "shy_surp"),
+        "crying": ("cry", "cry2", "tear", "tear1", "tear2"),
+        "shy": ("shy2", "shy3", "red"),
+        "troubled": ("awkward", "bad", "bitter_smile", "bitter_smile2", "puzzle", "trouble"),
+        "afraid": ("fear", "fear2"),
+        "panicked": ("panic",),
+        "excited": ("excite",),
+        "smug": ("doya",),
+        "mischievous": ("cheat",),
+        "cool": ("jito", "jito2"),
+        "sleepy": ("sleep",),
+    }.items()
+    for alias in aliases
 }
 
 
@@ -60,11 +106,23 @@ def irodori_emotion_caption(directives: Iterable[ActionDirective]) -> str:
     parts: list[str] = []
     seen: set[str] = set()
     for directive in directives:
-        caption = _IRODORI_EMOTION_CAPTIONS.get(directive.key, "")
+        emotion = _IRODORI_EMOTION_ALIASES.get(directive.key, directive.key)
+        caption = _IRODORI_EMOTION_CAPTIONS.get(emotion, "")
         if caption and caption not in seen:
             parts.append(caption)
             seen.add(caption)
     return "".join(parts)
+
+
+def emotion_category(key: str) -> str:
+    """Reduce a manifest expression or gesture to an LLM-facing emotion."""
+    category = _IRODORI_EMOTION_ALIASES.get(key, key)
+    return category if category in _IRODORI_EMOTION_CAPTIONS else ""
+
+
+def expression_choices(keys: Iterable[str], category: str) -> list[str]:
+    """Available manifest expression keys for one emotion on the current outfit."""
+    return sorted(key for key in keys if emotion_category(key) == category)
 
 
 @dataclass(frozen=True, slots=True)

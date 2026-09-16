@@ -26,14 +26,29 @@ a lawful source and import them themselves.
 - **Voice interaction** through one-click local Irodori-TTS v4.1 or OpenAI-compatible TTS, plus local
   `faster-whisper-large-v3` or OpenAI-compatible speech recognition.
 
+### New in v0.2.0
+
+- **Proactive conversations** can be enabled per character, with adjustable frequency and quiet
+  hours, plus birthday-related interactions.
+- **Character schedules and knowledge** include weekly routines, dated events, background facts,
+  and relationships. Chat can look up schedules and create reminders or shared plans; a diary can
+  be written after a day with conversation.
+- **More complete chat history** loads older messages in batches as you scroll. Saved voice clips
+  stay linked to their messages for replay after restarting the app.
+- **Motion and expression preferences** let each character use a fixed or randomly selected
+  animation per emotion category. The animation starts when the reply text appears.
+- **Four-language UI** covers the new features in Traditional Chinese, Simplified Chinese,
+  Japanese, and English.
+
 ## Main features
 
 | Area | Capabilities |
 |---|---|
 | Desktop characters | Start/stop multiple characters, show/hide, always-on-top, scale, drag, click-through |
-| Motion and appearance | Actions, expressions, gaze, idle/random actions, outfits, rendering settings |
+| Motion and appearance | Actions, expressions, gaze, idle/random actions, per-character emotion animations, outfits, rendering settings |
 | Models and assets | Import and validate a `dresses.json` folder or an individual Spine 3.6 asset set |
-| Chat and AI | Character-scoped chat, OpenAI-compatible LLM, Persona, producer details, and screen context |
+| Chat and AI | Character-scoped chat, proactive interactions, paged history, OpenAI-compatible LLM, Persona, producer details, and screen context |
+| Character planning | Weekly routines, calendar events, alarms and reminders, background knowledge, relationships, and diary |
 | Relationship data | Affection, summaries, long-term memory, history, memory album, and statistics |
 | Voice | Irodori-TTS Japanese speech, character reference voices, microphone input, and Whisper ASR |
 | Data management | Backup/restore, saved settings, activity log, and system tray controls |
