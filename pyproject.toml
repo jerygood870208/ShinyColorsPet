@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "shiny-colors-pet"
-version = "0.2.0"
+version = "0.2.1"
 description = "Windows desktop companion for THE IDOLM@STER SHINY COLORS"
 readme = "README.md"
 requires-python = ">=3.10"
