@@ -107,7 +107,7 @@ def _candidate_payload(
             "skeleton": skeleton.name,
             "atlas": atlas.name,
             "default_skin": default_skin,
-            "premultiplied_alpha": False,
+            "premultiplied_alpha": True,
         },
         "channels": {"base": 0, "gesture": 1, "face": 2, "lipsync": 3, "gaze": 4},
         "animation_groups": groups,
@@ -123,6 +123,9 @@ def _candidate_payload(
     if spec.presentation == "chibi":
         payload["spine"]["viewport_padding"] = {"x": 0.24, "y": 0.25}
         payload["window"] = {"width": 640, "height": 1120}
+        payload["animation_policy"] = {"mode": "exclusive", "mix_seconds": 0.0}
+    elif spec.presentation == "standard":
+        # Full-body gestures replace idle for all standard rigs.
         payload["animation_policy"] = {"mode": "exclusive", "mix_seconds": 0.0}
     return payload
 

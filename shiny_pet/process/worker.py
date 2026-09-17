@@ -47,6 +47,8 @@ def main() -> int:
     parser.add_argument("--spec", required=True)
     parser.add_argument("--settings", required=True)
     parser.add_argument("--runtime-root", type=Path)
+    parser.add_argument("--standard-animation-policy", choices=("targeted", "all"),
+                        default="all")
     args = parser.parse_args()
     spec = json.loads(args.spec)
     settings = validate(json.loads(args.settings))
@@ -106,7 +108,7 @@ def main() -> int:
                                random_enabled=settings["interaction_random_enabled"],
                                random_interval_seconds=settings[
                                    "interaction_random_interval_seconds"
-                               ])
+                               ], standard_animation_policy=args.standard_animation_policy)
         else:
             window = ChibiWindow(Path(spec["path"]), Path(spec["frames"]),
                                  settings["model_scale"])

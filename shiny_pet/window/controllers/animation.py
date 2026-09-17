@@ -24,15 +24,26 @@ class AnimationController:
     def __init__(
         self, renderer: PetRenderer, manifest: Manifest, *, rng: random.Random | None = None,
         idle_enabled: bool = True, random_enabled: bool = True,
+        standard_animation_policy: str = "all",
     ) -> None:
         self._renderer = renderer
         self._manifest = manifest
         self._rng = rng or random.Random()
         self._active: dict[str, tuple[PlaybackToken, Request]] = {}
         self._queues: dict[str, list[Request]] = {}
+        if standard_animation_policy not in {"targeted", "all"}:
+            raise ValueError("standard_animation_policy must be targeted or all")
         policy = manifest.raw.get("animation_policy", {})
-        self._exclusive = policy.get("mode", "layered") == "exclusive"
-        self._policy_mix = float(policy.get("mix_seconds", 0.15))
+        catalog = manifest.raw.get("catalog", {})
+        standard = isinstance(catalog, dict) and catalog.get("presentation") == "standard"
+        if standard:
+            # This run's CLI profile overrides old AppData policies for standard rigs.
+            self._exclusive = (standard_animation_policy == "all"
+                               or manifest.character_id in {"idol-01", "idol-13"})
+            self._policy_mix = 0.0 if self._exclusive else 0.15
+        else:
+            self._exclusive = policy.get("mode", "layered") == "exclusive"
+            self._policy_mix = float(policy.get("mix_seconds", 0.15))
         self._drag_token: PlaybackToken | None = None
         self._idle_enabled = idle_enabled
         self._random_enabled = random_enabled

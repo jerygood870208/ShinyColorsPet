@@ -381,12 +381,15 @@ class DesktopControlPanel(QWidget):
     vsync: QCheckBox
 
     def __init__(self, store: SettingsStore, settings: dict[str, Any],
-                 runtime_root: Path | None) -> None:
+                 runtime_root: Path | None, *,
+                 standard_animation_policy: str = "all") -> None:
         super().__init__()
         self.store, self.settings = store, settings
         set_locale(str(settings.get("ui_language", "zh-TW")))
         self.quitting = False
-        self.manager = ProcessManager(runtime_root)
+        self.manager = ProcessManager(
+            runtime_root, standard_animation_policy=standard_animation_policy
+        )
         extra_roots = [Path(value) for value in settings.get("asset_pack_roots", [])]
         self.manifest_root = managed_manifest_root(self.store.path.parent)
         self.runtime_catalog: RuntimeCatalog = discover_runtime_catalog(
@@ -1513,6 +1516,8 @@ def main(panel_class: type[DesktopControlPanel] = DesktopControlPanel) -> int:
     parser.add_argument("manifest", nargs="*", type=Path)
     parser.add_argument("--runtime-root", type=Path)
     parser.add_argument("--settings-file", type=Path)
+    parser.add_argument("--standard-animation-policy", choices=("targeted", "all"),
+                        default="all")
     args = parser.parse_args()
     app = QApplication(sys.argv[:1])
     app.setOrganizationName("ShinyColorsPet")
@@ -1544,7 +1549,10 @@ def main(panel_class: type[DesktopControlPanel] = DesktopControlPanel) -> int:
             settings["pets"] = [{"mode": "spine", "path": str(p.resolve()),
                                   "x": 80 + i * 100, "y": 80}
                                  for i, p in enumerate(args.manifest)]
-        panel = panel_class(store, settings, runtime_root)
+        panel = panel_class(
+            store, settings, runtime_root,
+            standard_animation_policy=args.standard_animation_policy,
+        )
         app.aboutToQuit.connect(panel.quit)
         panel.show()
         return app.exec()

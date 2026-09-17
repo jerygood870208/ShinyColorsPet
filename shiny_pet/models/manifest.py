@@ -25,7 +25,7 @@ class SpineFiles:
     texture_preferred: Path | None = None
     texture_fallback: Path | None = None
     default_skin: str = "default"
-    premultiplied_alpha: bool = False
+    premultiplied_alpha: bool = True
 
 
 @dataclass(frozen=True, slots=True)
@@ -220,7 +220,9 @@ def load_manifest(path: Path, *, require_files: bool = True) -> Manifest:
         return _safe_asset_path(root, value, f"spine.{key}")
 
     default_skin = spine.get("default_skin", "default")
-    pma = spine.get("premultiplied_alpha", False)
+    # Legacy per-model flags remain readable, but the WebGL renderer uses PMA
+    # for every model regardless of this manifest value.
+    pma = spine.get("premultiplied_alpha", True)
     if not isinstance(default_skin, str) or not default_skin:
         raise ManifestError("spine.default_skin must be a non-empty string")
     if not isinstance(pma, bool):

@@ -50,9 +50,13 @@ class ProcessManager(QObject):
     message_received = Signal(str, object)
     error = Signal(str)
 
-    def __init__(self, runtime_root: Path | None) -> None:
+    def __init__(self, runtime_root: Path | None, *,
+                 standard_animation_policy: str = "all") -> None:
         super().__init__()
+        if standard_animation_policy not in {"targeted", "all"}:
+            raise ValueError("standard_animation_policy must be targeted or all")
         self.runtime_root = runtime_root
+        self.standard_animation_policy = standard_animation_policy
         self.workers: dict[str, Worker] = {}
         self.closing = False
         self.timer = QTimer(self)
@@ -76,6 +80,7 @@ class ProcessManager(QObject):
             "interaction_random_enabled", "interaction_random_interval_seconds",
         )}
         args = [*prefix, "--spec", json.dumps(spec), "--settings", json.dumps(options)]
+        args += ["--standard-animation-policy", self.standard_animation_policy]
         if self.runtime_root:
             args += ["--runtime-root", str(self.runtime_root.resolve())]
         process.setArguments(args)

@@ -38,7 +38,7 @@ def generate_candidate(
             "skeleton": skeleton_name,
             "atlas": atlas_name,
             "default_skin": "default",
-            "premultiplied_alpha": False,
+            "premultiplied_alpha": True,
         },
         "channels": {"base": 0, "gesture": 1, "face": 2, "lipsync": 3, "gaze": 4},
         "animation_groups": groups,

@@ -40,6 +40,7 @@ class PetWindow(QWidget):
         idle_enabled: bool = True,
         random_enabled: bool = True,
         random_interval_seconds: int = 30,
+        standard_animation_policy: str = "all",
     ) -> None:
         super().__init__()
         self.manifest: Manifest = resolve_abilities(load_manifest(manifest_path)).manifest
@@ -62,6 +63,7 @@ class PetWindow(QWidget):
         self.animation = AnimationController(
             self.renderer, self.manifest,
             idle_enabled=idle_enabled, random_enabled=random_enabled,
+            standard_animation_policy=standard_animation_policy,
         )
         self.lipsync = LipSyncController(self.renderer, self.renderer.capabilities)
         self.gaze = GazeController(self.renderer, capabilities)

@@ -499,7 +499,6 @@ class WebEngineSpine36Renderer(QWebEngineView):
         self._call("setFramePolicy", self._fps, self._vsync, self._quality)
         self._call("setScale", self._scale)
         if self._manifest is not None:
-            self._call("setPremultipliedAlpha", self._manifest.spine.premultiplied_alpha)
             self._call("setSkin", self._manifest.spine.default_skin)
             viewport = self._manifest.raw["spine"].get("viewport_padding", {})
             self._call(

@@ -26,7 +26,8 @@ the pre-implementation runtime/asset licensing gates passed.
   Transparent WebEngine composition separately requires context PMA enabled and separate framebuffer
   alpha blending (`ONE / ONE_MINUS_SRC_ALPHA`). The project owner visually approved this combination
   on transparent, checkerboard, white, and gray backgrounds. Disabling context PMA caused dark seams;
-  enabling renderer PMA caused washout.
+  enabling renderer PMA *without premultiplying texture uploads* caused washout. This was the
+  original baseline and is superseded by the 2026-09-17 amendment below.
 - Transparent screenshot corners had alpha 0, while the character center had alpha 255.
 - Native Qt input reached Chromium's `QQuickWidget`, generated a canvas click, crossed QWebChannel,
   and returned alpha 255 at the same logical coordinate.
@@ -62,4 +63,30 @@ The product owner removed the initial two-pet cap for the public release. The su
 new desktop character based on the number already running. Process isolation, heartbeat checks,
 graceful shutdown, and orphan-worker cleanup remain unchanged. Concurrent capacity is therefore
 determined by the user's machine rather than an application-enforced limit.
+
+## Rendering amendment — 2026-09-17
+
+Keep the Spine WebGL runtime at 3.6, but use premultiplied alpha throughout the rendering path for
+all models. The WebGL context enables `UNPACK_PREMULTIPLY_ALPHA_WEBGL` before the atlas textures load,
+and `SkeletonRenderer.premultipliedAlpha` is enabled. The existing separate framebuffer alpha blending
+remains in place. Testing in `ShinyColorsPetDev` confirmed this combination fixes the white face
+artifacts in `1940100010` `stand` and `stand_costume`, and the fine lines at joints, while preserving
+multiply slot effects. The previous renderer-only PMA test did not premultiply texture uploads and
+therefore is not evidence against the complete configuration.
+
+New manifests identify PMA as the default. Older manifests with `premultiplied_alpha: false` remain
+readable but no longer override the renderer; users do not need to clear AppData manifests. This
+change does not claim visual verification of every model, particularly assets already stored with
+premultiplied pixels.
+
+## Standard-model animation policy — 2026-09-17
+
+Standard rigs now play full-body gestures exclusively on the base track, replacing idle with zero
+mix time. This prevents the idle track from clearing raised-hand attachments. Dev testing first
+isolated the issue to idols 01 and 13; the project owner then checked that applying the same policy
+to the other characters had no visible adverse effect. Chibi models keep their manifest policy.
+The default `main.py` profile is `all`; `--standard-animation-policy targeted` remains available for
+regression comparison with the original 01/13-only scope. The runtime choice overrides old AppData
+standard-model manifests, so clearing or reimporting those manifests is unnecessary. Newly generated
+standard-model manifests also record the exclusive policy.
 
