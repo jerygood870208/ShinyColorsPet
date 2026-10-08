@@ -80,7 +80,7 @@ class NullRenderer:
         self._require_loaded()
         return bool(semantic_name) and self._capabilities.expressions
 
-    def set_mouth(self, openness: float, form: float = 0.0) -> bool:
+    def set_mouth(self, openness: float, form: float = 0.0, emotion: str = "neutral") -> bool:
         self._require_loaded()
         if not 0.0 <= openness <= 1.0 or not -1.0 <= form <= 1.0:
             raise ValueError("mouth values are outside their normalized ranges")

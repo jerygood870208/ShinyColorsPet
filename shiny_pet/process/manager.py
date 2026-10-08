@@ -16,6 +16,7 @@ from typing import Any
 
 from PySide6.QtCore import QObject, QProcess, QTimer, Signal
 
+from .heartbeat import PollGap
 from .protocol import MAX_MESSAGE, PREFIX, decode, encode
 
 
@@ -43,6 +44,11 @@ class Worker:
     semantic_actions: frozenset[str] = frozenset()
     semantic_expressions: frozenset[str] = frozenset()
     character_id: str = ""
+    settings: dict[str, Any] = field(default_factory=dict)
+    desired_open: bool = True
+    visible: bool = True
+    resume_restore_until: float = 0
+    resume_restarted: bool = False
 
 
 class ProcessManager(QObject):
@@ -59,6 +65,7 @@ class ProcessManager(QObject):
         self.standard_animation_policy = standard_animation_policy
         self.workers: dict[str, Worker] = {}
         self.closing = False
+        self._poll_gap = PollGap()
         self.timer = QTimer(self)
         self.timer.setInterval(1000)
         self.timer.timeout.connect(self.tick)
@@ -69,8 +76,16 @@ class ProcessManager(QObject):
             raise RuntimeError("Supervisor is shutting down")
         pet_id = uuid.uuid4().hex[:12]
         process = QProcess(self)
-        worker = Worker(process, dict(spec))
+        worker = Worker(process, dict(spec), settings=dict(settings))
         self.workers[pet_id] = worker
+        self._launch_process(pet_id)
+        self.changed.emit()
+        return pet_id
+
+    def _launch_process(self, pet_id: str) -> None:
+        worker = self.workers[pet_id]
+        process = worker.process
+        spec, settings = worker.spec, worker.settings
         program, prefix, working_directory = worker_entrypoint()
         process.setProgram(program)
         options = {key: settings[key] for key in (
@@ -85,13 +100,45 @@ class ProcessManager(QObject):
             args += ["--runtime-root", str(self.runtime_root.resolve())]
         process.setArguments(args)
         process.setWorkingDirectory(str(working_directory))
-        process.readyReadStandardOutput.connect(lambda: self.read(pet_id))
-        process.readyReadStandardError.connect(lambda: self.read_errors(pet_id))
-        process.finished.connect(lambda code, status: self.finished(pet_id, code))
-        process.errorOccurred.connect(lambda error: self.process_error(pet_id))
+        process.readyReadStandardOutput.connect(
+            lambda: self.read(pet_id) if worker.process is process else None)
+        process.readyReadStandardError.connect(
+            lambda: self.read_errors(pet_id) if worker.process is process else None)
+        process.finished.connect(
+            lambda code, status: self.finished(pet_id, code) if worker.process is process else None)
+        process.errorOccurred.connect(
+            lambda error: self.process_error(pet_id) if worker.process is process else None)
         process.start()
+
+    def _observe_resume(self, now: float | None = None) -> None:
+        current = time.monotonic() if now is None else now
+        if self.closing or not self._poll_gap.observe(current):
+            return
+        for worker in self.workers.values():
+            if worker.desired_open and worker.state in {"starting", "ready"}:
+                worker.last_seen = current
+                worker.started = current
+                worker.resume_restore_until = current + 45
+                worker.resume_restarted = False
+
+    def _restore_after_resume(self, pet_id: str) -> bool:
+        worker = self.workers[pet_id]
+        if (self.closing or not worker.desired_open or worker.resume_restarted
+                or not worker.resume_restore_until
+                or time.monotonic() > worker.resume_restore_until):
+            return False
+        old_process = worker.process
+        worker.process = QProcess(self)
+        worker.state = "starting"
+        worker.buffer = b""
+        worker.diagnostics = b""
+        worker.last_seen = worker.started = time.monotonic()
+        worker.stop_deadline = 0
+        worker.resume_restarted = True
+        self._launch_process(pet_id)
+        old_process.deleteLater()
         self.changed.emit()
-        return pet_id
+        return True
 
     def read_errors(self, pet_id: str) -> None:
         worker = self.workers[pet_id]
@@ -99,12 +146,14 @@ class ProcessManager(QObject):
                               + worker.process.readAllStandardError().data())[-16384:]
 
     def process_error(self, pet_id: str) -> None:
+        self._observe_resume()
         worker = self.workers[pet_id]
         worker.state = "failed"
         self.error.emit(f"{pet_id}: {worker.process.errorString()}")
         self.changed.emit()
 
     def read(self, pet_id: str) -> None:
+        self._observe_resume()
         worker = self.workers[pet_id]
         worker.buffer += worker.process.readAllStandardOutput().data()
         while b"\n" in worker.buffer:
@@ -131,6 +180,8 @@ class ProcessManager(QObject):
                 ):
                     worker.semantic_expressions = frozenset(expressions)
                 self.changed.emit()
+                if not worker.visible:
+                    self.send(pet_id, "hide")
             elif kind == "error":
                 worker.state = "failed"
                 self.error.emit(f"{pet_id}: {message.get('message')}")
@@ -139,6 +190,11 @@ class ProcessManager(QObject):
                 for key in ("x", "y"):
                     if type(message.get(key)) is int:
                         worker.spec[key] = message[key]
+            elif kind == "pong" and type(message.get("visible")) is bool:
+                worker.visible = message["visible"]
+            elif kind == "closed" and message.get("reason", "user") in {"user", "requested"}:
+                # A normal in-window close is intentional and must not reopen the pet.
+                worker.desired_open = False
             self.message_received.emit(pet_id, message)
         if len(worker.buffer) > MAX_MESSAGE:
             worker.buffer = b""
@@ -151,6 +207,10 @@ class ProcessManager(QObject):
         if worker.process.bytesToWrite() > MAX_MESSAGE:
             return False
         data = encode(kind, **payload)
+        if kind in {"show", "hide"}:
+            worker.visible = kind == "show"
+        elif kind == "settings":
+            worker.settings.update(payload.get("settings", {}))
         return worker.process.write(data) == len(data)
 
     def semantic(
@@ -167,6 +227,7 @@ class ProcessManager(QObject):
 
     def stop(self, pet_id: str) -> None:
         worker = self.workers[pet_id]
+        worker.desired_open = False
         if worker.process.state() == QProcess.ProcessState.NotRunning:
             return
         self.send(pet_id, "quit")
@@ -176,8 +237,11 @@ class ProcessManager(QObject):
             self.changed.emit()
 
     def finished(self, pet_id: str, code: int) -> None:
+        self._observe_resume()
         worker = self.workers[pet_id]
         self.read(pet_id)
+        if self._restore_after_resume(pet_id):
+            return
         failed = code != 0 or worker.state == "failed"
         worker.state = "failed" if failed else "stopped"
         if failed and worker.diagnostics:
@@ -188,6 +252,7 @@ class ProcessManager(QObject):
 
     def tick(self) -> None:
         now = time.monotonic()
+        self._observe_resume(now)
         for pet_id, worker in tuple(self.workers.items()):
             if worker.process.state() == QProcess.ProcessState.NotRunning:
                 continue

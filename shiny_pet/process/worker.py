@@ -8,7 +8,6 @@ import os
 import queue
 import sys
 import threading
-import time
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any
@@ -19,6 +18,7 @@ from PySide6.QtWidgets import QApplication, QMenu, QWidget
 from shiny_pet.i18n import set_locale, tr
 from shiny_pet.settings.store import validate
 
+from .heartbeat import WorkerHeartbeat
 from .protocol import COMMANDS, MAX_MESSAGE, decode, encode
 
 
@@ -115,10 +115,13 @@ def main() -> int:
     except (OSError, ValueError, RuntimeError) as exc:
         report("error", message=str(exc))
         return 2
-    last_ping = time.monotonic()
+    heartbeat = WorkerHeartbeat()
     last_position: tuple[int, int] | None = None
+    exit_reason = "user"
 
     def fail(message: str) -> None:
+        nonlocal exit_reason
+        exit_reason = "renderer_failure"
         report("error", message=message)
         window.close()
         app.exit(2)
@@ -158,8 +161,9 @@ def main() -> int:
     window.show()
 
     def poll() -> None:
-        nonlocal last_ping, last_position
-        if disconnected.is_set() or time.monotonic() - last_ping > 15:
+        nonlocal last_position, exit_reason
+        if disconnected.is_set():
+            exit_reason = "disconnect"
             window.close()
             app.quit()
             return
@@ -171,10 +175,11 @@ def main() -> int:
             kind = message["kind"]
             try:
                 if kind == "quit":
+                    exit_reason = "requested"
                     window.close()
                     app.quit()
                 elif kind == "ping":
-                    last_ping = time.monotonic()
+                    heartbeat.received()
                     report("pong", visible=window.isVisible())
                 elif kind == "show":
                     window.show()
@@ -228,10 +233,19 @@ def main() -> int:
                     if (isinstance(openness, bool) or not isinstance(openness, (int, float))
                             or isinstance(form, bool) or not isinstance(form, (int, float))):
                         raise ValueError("mouth values must be numbers")
-                    window.lipsync.update(float(openness), float(form))
+                    emotion = message.get("emotion", "neutral")
+                    if not isinstance(emotion, str):
+                        raise ValueError("mouth emotion must be text")
+                    window.lipsync.update(float(openness), float(form), emotion)
                 report("ack", command=kind, request_id=message.get("request_id"))
             except (KeyError, ValueError, TypeError, RuntimeError) as exc:
                 report("command_error", message=str(exc), request_id=message.get("request_id"))
+        if heartbeat.expired():
+            exit_reason = "heartbeat_timeout"
+            report("heartbeat_timeout")
+            window.close()
+            app.quit()
+            return
         position = (window.x(), window.y())
         if position != last_position:
             report("position", x=position[0], y=position[1])
@@ -245,7 +259,7 @@ def main() -> int:
     result = app.exec()
     timer.stop()
     window.lifecycle.close()
-    report("closed")
+    report("closed", reason=exit_reason)
     return result
 
 

@@ -4,21 +4,30 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
+from PySide6.QtCore import QCoreApplication
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
+    QFileDialog,
     QFormLayout,
     QLabel,
     QLineEdit,
     QPushButton,
 )
 
-from shiny_pet.i18n import tr, tr_dynamic
+from shiny_pet.i18n import tr, tr_dynamic, trf
 from shiny_pet.voice import LOCAL_IRODORI_MODEL
+from shiny_pet.voice.reference_audio import (
+    MAX_REFERENCE_SECONDS,
+    ReferenceAudioImporter,
+    custom_reference_path,
+    default_reference_path,
+)
 
-from ._shared import _card, _save_button
+from ._shared import _card, _character_combo, _save_button
 
 
 def _install_tts(panel: Any) -> None:
@@ -57,6 +66,104 @@ def _install_tts(panel: Any) -> None:
     layout.addWidget(install_button)
     layout.addWidget(install_status)
 
+    _, reference_layout = _card(page)
+    reference_layout.addWidget(QLabel(tr("自訂角色參考音檔")))
+    character = _character_combo(panel)
+    character.setObjectName("TTSReferenceCharacter")
+    reference_layout.addWidget(character)
+    hint = QLabel(trf(
+        "每個角色只能保留一個自訂參考音檔，長度上限 {seconds} 秒。"
+        "匯入新檔會取代該角色的舊自訂檔；可一鍵恢復預設。"
+        "支援 WAV、FLAC、OGG、M4A、MP3，請使用單人清晰說話的錄音。"
+        "此功能適用於內建 Irodori-TTS。",
+        seconds=MAX_REFERENCE_SECONDS,
+    ))
+    hint.setWordWrap(True)
+    hint.setObjectName("Muted")
+    reference_layout.addWidget(hint)
+    reference_status = QLabel()
+    reference_status.setObjectName("TTSReferenceStatus")
+    reference_status.setWordWrap(True)
+    reference_layout.addWidget(reference_status)
+    import_button = QPushButton(tr("匯入參考音檔"))
+    import_button.setObjectName("TTSReferenceImport")
+    restore_button = QPushButton(tr("恢復預設參考音檔"))
+    restore_button.setObjectName("TTSReferenceRestore")
+    reference_layout.addWidget(import_button)
+    reference_layout.addWidget(restore_button)
+    importer = ReferenceAudioImporter(page)
+    app = QCoreApplication.instance()
+    if app is not None:
+        app.aboutToQuit.connect(importer.cancel)
+    importing = False
+
+    def refresh_reference() -> None:
+        key = str(character.currentData() or "")
+        try:
+            custom = custom_reference_path(panel.local_irodori_server.reference_override_root, key)
+        except ValueError:
+            custom = None
+        default = default_reference_path(
+            Path(str(panel.settings.get("tts_reference_root", "audio_reference"))), key,
+        )
+        overridden = custom is not None and custom.is_file()
+        if overridden:
+            reference_status.setText(tr("目前使用自訂參考音檔"))
+        elif default is not None:
+            reference_status.setText(trf("目前使用預設參考音檔：{filename}", filename=default.name))
+        else:
+            reference_status.setText(tr("此角色目前沒有預設參考音檔。"))
+        local = provider.currentData() == "irodori_local"
+        character.setEnabled(not importing)
+        import_button.setEnabled(local and custom is not None and not importing)
+        restore_button.setEnabled(local and overridden and not importing)
+
+    def import_reference() -> None:
+        nonlocal importing
+        filename, _filter = QFileDialog.getOpenFileName(
+            page, tr("選擇參考音檔"), "", "Audio (*.wav *.flac *.ogg *.m4a *.mp3)",
+        )
+        if not filename:
+            return
+        destination = custom_reference_path(
+            panel.local_irodori_server.reference_override_root, str(character.currentData()),
+        )
+        importing = True
+        refresh_reference()
+        reference_status.setText(tr("正在檢查並匯入音檔…"))
+        importer.start(Path(filename), destination)
+
+    def imported(_path: str, duration: float) -> None:
+        nonlocal importing
+        importing = False
+        refresh_reference()
+        reference_status.setText(trf(
+            "已匯入自訂參考音檔（{seconds:.1f} 秒），下次朗讀時生效。",
+            seconds=duration,
+        ))
+
+    def import_failed(message: str) -> None:
+        nonlocal importing
+        importing = False
+        refresh_reference()
+        reference_status.setText(tr("匯入失敗，原有參考音檔未變更：") + message)
+
+    def restore_reference() -> None:
+        try:
+            custom_reference_path(
+                panel.local_irodori_server.reference_override_root, str(character.currentData()),
+            ).unlink(missing_ok=True)
+        except OSError as exc:
+            reference_status.setText(tr("恢復預設失敗：") + str(exc))
+            return
+        refresh_reference()
+
+    character.currentIndexChanged.connect(refresh_reference)
+    import_button.clicked.connect(import_reference)
+    restore_button.clicked.connect(restore_reference)
+    importer.imported.connect(imported)
+    importer.failed.connect(import_failed)
+
     def update_provider() -> None:
         selected = str(provider.currentData())
         local_irodori = selected == "irodori_local"
@@ -75,6 +182,7 @@ def _install_tts(panel: Any) -> None:
             ))
         else:
             install_status.setText("")
+        refresh_reference()
 
     def install() -> None:
         install_button.setEnabled(False)
@@ -132,6 +240,7 @@ def _install_tts(panel: Any) -> None:
             tts_reference_root=root.text().strip(),
         )
         panel._set_tts_enabled(enabled.isChecked())
+        refresh_reference()
 
     _save_button(layout, "儲存 TTS 設定", save)
     page.layout().addStretch()

@@ -6,10 +6,13 @@ import json
 import re
 import sqlite3
 import threading
+from concurrent.futures import CancelledError
 from contextlib import closing
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+from shiny_pet.proactive import ActiveChatState, advance, message_sent, user_interaction
 
 
 def _now() -> str:
@@ -69,6 +72,7 @@ class ScheduleState:
     last_checked_at: str = ""
     last_producer_birthday_year: int = 0
     idol_birthday_ack_year: int = 0
+    active_chat: ActiveChatState = field(default_factory=ActiveChatState)
 
 
 @dataclass(frozen=True, slots=True)
@@ -225,6 +229,12 @@ class ChatDatabase:
                     UNIQUE(character, other_character, relation_label)
                 );
             """)
+            schedule_columns = {
+                str(row[1]) for row in db.execute("PRAGMA table_info(character_schedule_state)")
+            }
+            if "active_chat_state" not in schedule_columns:
+                db.execute("ALTER TABLE character_schedule_state "
+                           "ADD COLUMN active_chat_state TEXT NOT NULL DEFAULT '{}'")
             self.fts5_trigram_available = self._install_lore_fts(db)
 
     @staticmethod
@@ -583,7 +593,8 @@ class ChatDatabase:
             row = db.execute(
                 "SELECT character_id,proactive_enabled,proactive_tier,timezone,"
                 "quiet_hours_start,quiet_hours_end,daily_proactive_cap,last_interaction_at,"
-                "last_checked_at,last_producer_birthday_year,idol_birthday_ack_year "
+                "last_checked_at,last_producer_birthday_year,idol_birthday_ack_year,"
+                "active_chat_state "
                 "FROM character_schedule_state WHERE character_id=?",
                 (character,),
             ).fetchone()
@@ -600,6 +611,7 @@ class ChatDatabase:
             str(row[8] or ""),
             int(row[9] or 0),
             int(row[10] or 0),
+            ActiveChatState.parse(str(row[11] or "{}")),
         )
 
     def schedule_states(self, *, enabled_only: bool = False) -> list[ScheduleState]:
@@ -615,7 +627,7 @@ class ChatDatabase:
     def update_schedule_preferences(
         self, character: str, *, enabled: bool, tier: str, quiet_start: str, quiet_end: str
     ) -> ScheduleState:
-        caps = {"quiet": 1, "normal": 3, "clingy": 6}
+        caps = {"quiet": 1, "normal": 3, "clingy": 6, "active": 0}
         if tier not in caps:
             raise ValueError("unknown proactive tier")
         for value in (quiet_start, quiet_end):
@@ -623,6 +635,13 @@ class ChatDatabase:
                 raise ValueError("quiet hours must use HH:MM")
         self.ensure_schedule_state(character)
         with self._lock, closing(self._connect()) as db, db:
+            # Selecting active waits for a new user message; saving the same mode preserves it.
+            if not enabled or tier != "active":
+                db.execute("UPDATE character_schedule_state SET active_chat_state='{}' "
+                           "WHERE character_id=?", (character,))
+                db.execute("UPDATE character_schedule_log SET status='skipped' "
+                           "WHERE character_id=? AND event_type='active_checkin' "
+                           "AND status IN ('queued','error')", (character,))
             db.execute(
                 "UPDATE character_schedule_state SET proactive_enabled=?,proactive_tier=?,"
                 "timezone='system',quiet_hours_start=?,quiet_hours_end=?,"
@@ -634,11 +653,38 @@ class ChatDatabase:
     def record_user_interaction(self, character: str, created_at: str) -> None:
         self.ensure_schedule_state(character)
         with self._lock, closing(self._connect()) as db, db:
+            row = db.execute(
+                "SELECT proactive_enabled,proactive_tier,active_chat_state "
+                "FROM character_schedule_state WHERE character_id=?", (character,),
+            ).fetchone()
+            if row and row[0] and row[1] == "active":
+                active = user_interaction(
+                    ActiveChatState.parse(str(row[2])), datetime.fromisoformat(created_at),
+                )
+                db.execute("UPDATE character_schedule_state SET active_chat_state=? "
+                           "WHERE character_id=?", (active.serialize(), character))
+                db.execute("UPDATE character_schedule_log SET status='skipped' "
+                           "WHERE character_id=? AND event_type='active_checkin' "
+                           "AND status IN ('queued','error')", (character,))
             db.execute(
                 "UPDATE character_schedule_state SET last_interaction_at=?,updated_at=? "
                 "WHERE character_id=?",
                 (created_at, _now(), character),
             )
+
+    def advance_active_chat(self, character: str, now: datetime) -> ActiveChatState:
+        with self._lock, closing(self._connect()) as db, db:
+            row = db.execute("SELECT proactive_enabled,proactive_tier,active_chat_state "
+                             "FROM character_schedule_state WHERE character_id=?",
+                             (character,)).fetchone()
+            if row is None or not row[0] or row[1] != "active":
+                return ActiveChatState()
+            old = ActiveChatState.parse(str(row[2]))
+            active = advance(old, now)
+            if active != old:
+                db.execute("UPDATE character_schedule_state SET active_chat_state=? "
+                           "WHERE character_id=?", (active.serialize(), character))
+            return active
 
     def set_schedule_year(self, character: str, field: str, year: int) -> None:
         if field not in {"last_producer_birthday_year", "idol_birthday_ack_year"}:
@@ -704,6 +750,22 @@ class ChatDatabase:
         created_at = _now()
         scheduled_timestamp = _utc_timestamp(scheduled_for)
         with self._lock, closing(self._connect()) as db, db:
+            if event_type == "active_checkin":
+                state = db.execute(
+                    "SELECT proactive_enabled,proactive_tier,active_chat_state "
+                    "FROM character_schedule_state WHERE character_id=?", (character,),
+                ).fetchone()
+                event = db.execute("SELECT event_key,status FROM character_schedule_log "
+                                   "WHERE id=?", (log_id,)).fetchone()
+                active = ActiveChatState.parse(str(state[2])) if state else ActiveChatState()
+                if (not state or not state[0] or state[1] != "active" or not event
+                        or event[1] != "queued" or not active.level
+                        or active.event_key != event[0]):
+                    raise CancelledError("active conversation event is no longer current")
+                db.execute("UPDATE character_schedule_state SET active_chat_state=? "
+                           "WHERE character_id=?",
+                           (message_sent(active, datetime.fromisoformat(created_at)).serialize(),
+                            character))
             cursor = db.execute(
                 "INSERT INTO messages(character,role,content,created_at,source,"
                 "trigger_event_type,scheduled_for) VALUES(?,'assistant',?,?,?,?,?)",

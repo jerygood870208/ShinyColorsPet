@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import shutil
 from pathlib import Path
 
 from cx_Freeze import Executable, setup
 
 ROOT = Path(__file__).resolve().parents[1]
-BUILD_ROOT = ROOT / "build" / "ShinyColorsPet"
+BUILD_ROOT = Path(os.environ.get("SHINY_PET_BUILD_ROOT", ROOT / "build" / "ShinyColorsPet"))
 
 
 def _load_allowlisted_files(filename: str) -> list[tuple[str, str]]:
@@ -86,7 +87,7 @@ include_files = [
 
 setup(
     name="ShinyColorsPet",
-    version="0.2.1",
+    version="0.2.4",
     description="ShinyColorsPet desktop companion",
     options={
         "build_exe": {

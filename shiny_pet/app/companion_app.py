@@ -83,7 +83,7 @@ class _Signals(QObject):
     reply = Signal(str, object)
     chat_error = Signal(str, str)
     error = Signal(str)
-    mouth = Signal(str, float, float)
+    mouth = Signal(str, float, float, str)
     transcript = Signal(str, str)
     recording_finished = Signal(str)
     tts_started = Signal(object)
@@ -186,7 +186,7 @@ class CompanionControlPanel(DesktopControlPanel):
             ),
         )
         self.agent_timer = QTimer(self)
-        self.agent_timer.setInterval(60_000)
+        self.agent_timer.setInterval(10_000)
         self.agent_timer.timeout.connect(self.agent_scheduler.tick)
         self.agent_timer.start()
         QTimer.singleShot(0, self.agent_scheduler.tick)
@@ -1066,6 +1066,12 @@ class CompanionControlPanel(DesktopControlPanel):
         is_irodori = model.strip().casefold() == "irodori-tts"
         voice = irodori_voice_id(character_id, configured_voice) if is_irodori else configured_voice
         caption = irodori_emotion_caption(directives) if is_irodori else ""
+        # Prefer the explicit expression; gestures are a fallback for speech emotion.
+        emotion = next(
+            (emotion_category(d.key) for kind in ("expression", "action")
+             for d in directives if d.kind == kind and emotion_category(d.key)),
+            "neutral",
+        )
         synth = HttpTTSClient(
             TTSConfig(
                 api_url=url,
@@ -1077,7 +1083,7 @@ class CompanionControlPanel(DesktopControlPanel):
         )
 
         def mouth(openness: float, form: float) -> bool:
-            self.signals.mouth.emit(pet_id, openness, form)
+            self.signals.mouth.emit(pet_id, openness, form, emotion)
             return True
 
         coordinator = VoiceCoordinator(synth, PlatformAudioPlayer(), mouth)
@@ -1185,7 +1191,7 @@ class CompanionControlPanel(DesktopControlPanel):
                 return audio, media_type
 
         def mouth(openness: float, form: float) -> bool:
-            self.signals.mouth.emit(pet_id, openness, form)
+            self.signals.mouth.emit(pet_id, openness, form, "neutral")
             return True
 
         coordinator = VoiceCoordinator(CachedSynthesizer(), PlatformAudioPlayer(), mouth)
@@ -1201,10 +1207,10 @@ class CompanionControlPanel(DesktopControlPanel):
 
         threading.Thread(target=run, name="shiny-tts-replay", daemon=True).start()
 
-    def _mouth(self, pet_id: str, openness: float, form: float) -> None:
+    def _mouth(self, pet_id: str, openness: float, form: float, emotion: str = "neutral") -> None:
         worker = self.manager.workers.get(pet_id)
         if worker:
-            self.manager.send(pet_id, "mouth", openness=openness, form=form)
+            self.manager.send(pet_id, "mouth", openness=openness, form=form, emotion=emotion)
 
     def toggle_recording(self, character_id: str) -> None:
         window = self.chat_windows.get(character_id)

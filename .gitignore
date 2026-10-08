@@ -56,3 +56,4 @@ tools/spikes/
 !audio_reference/
 !audio_reference/**
 /tests
+*.m4a

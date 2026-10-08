@@ -92,7 +92,24 @@ python -m venv .venv
 `ShinyColorsPet.exe`。`souls/` 與 `audio_reference/` 會整個納入成品；發布資產及最小 Spine
 Runtime 則受 `packaging/` 內的審核清單控制。
 
+說話時會依 AI 回覆的情緒選用模型內的 `lip_smile`、`lip_sad`、`lip_anger`、
+`lip_shy`、`lip_surp` 等嘴型；一般語氣使用 `lip_wait`，缺少動畫時自動回退。
+語音結束、取消或失敗時回到 `lip_wait_s`（模型需提供此動畫）。
+
 ### 本機 Irodori-TTS
+
+TTS 設定可針對角色匯入 WAV、FLAC、OGG、M4A 或 MP3 參考音檔，長度上限為
+120 秒。每個角色只保留一個自訂檔，新檔成功匯入後會取代舊檔；匯入失敗則保留
+原有聲音。按「恢復預設參考音檔」可一鍵還原，於下一次朗讀生效。
+
+單擊觸碰 Spine 桌寵時，會從該角色的 `breast_01～03` 語音中隨機播放一段。請自行在 audio_reference/touch_voices/ 中根據腳色編號放入想觸發的聲音
+audio_reference/touch_voices/
+├── 001/
+│   ├── mypage_001_breast_01.m4a
+│   ├── mypage_001_breast_02.m4a
+│   └── mypage_001_breast_03.m4a
+
+標準版與 Spine Q 版共用角色聲音，連續觸碰不疊音。
 
 在 **TTS 設定**選擇 **內建 Irodori-TTS v4.1**，即可一鍵建立隔離環境並安裝官方
 [Irodori-TTS](https://github.com/Aratako/Irodori-TTS) 與
@@ -101,6 +118,15 @@ Runtime 則受 `packaging/` 內的審核清單控制。
 系統 `PATH` 中可用的 FFmpeg。Runtime 與模型會存放於
 `%LOCALAPPDATA%/ShinyColorsPet/irodori-runtime/`，不會寫入專案目錄；服務只監聽
 `127.0.0.1:8088`。詳細流程見 [本機 Irodori-TTS 說明](docs/irodori-local-runtime.md)。
+
+## 積極主動對話
+
+0.2.3 起，休眠喚醒會重設人物程序的心跳計時；原本開啟的人物若於喚醒過程中退出，
+會自動恢復人物、服裝、位置、縮放與顯示狀態。手動關閉的人物不會被重新開啟。
+
+「主動互動」新增「積極」選項：使用者先聊天後啟動，依回覆速度在
+5±2、10±2、15±2 分鐘三檔頻率間調整，第三檔 15 分鐘未回覆則退出。
+完整規則見 [積極主動對話模式](docs/proactive-chat.md)。
 
 ## 語言支援狀態
 

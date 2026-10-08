@@ -32,6 +32,17 @@ request and stops the process it owns when TTS is disabled or the application ex
 
 ## Voice mapping
 
+The TTS settings page can import one custom recording per character (WAV, FLAC, OGG,
+M4A, or MP3; maximum 120 seconds). Qt Multimedia decodes and converts the recording to
+48 kHz mono PCM WAV without blocking the UI. Only a successful import replaces the old
+file; invalid, empty, and overlong recordings leave it intact.
+
+Custom files live beside the user settings in `tts-reference-overrides/NN.wav`. They take
+precedence over the default references without modifying them. **恢復預設參考音檔** removes
+the selected character's override. Changes take effect on the next synthesis, including
+when the managed server is already running. References are compared using their source
+path, size, and modification time, so restoring an older default cannot keep a stale custom voice.
+
 Numeric character references are converted or copied into the managed server voice directory:
 
 ```text

@@ -16,6 +16,7 @@ from shiny_pet.renderer.webengine_spine36 import WebEngineSpine36Renderer
 from .controllers import AnimationController, GazeController, InputController, LipSyncController
 from .controllers.lifecycle import ModelLifecycleManager
 from .controllers.passthrough import WindowsPassthrough
+from .controllers.touch_voice import TouchVoiceController
 from .hit_overlay import HitOverlay
 
 
@@ -79,13 +80,14 @@ class PetWindow(QWidget):
         if random_enabled:
             self.random_timer.start()
         self.input = InputController(self, self.renderer, self.renderer)
+        self.touch_voice = TouchVoiceController(self, self.manifest.character_id)
         self.passthrough = WindowsPassthrough(self, self.renderer)
         self.lifecycle = ModelLifecycleManager(
             self._stop_interactions, self.passthrough.stop, self.animation.stop,
             self.renderer.unload,
         )
         self.renderer.loadFinished.connect(lambda _ok: self.input.install_tree(self.renderer))
-        self.input.clicked.connect(lambda: self.animation.play_gesture("click"))
+        self.input.clicked.connect(self._play_touch)
         self.input.drag_started.connect(self.animation.start_drag)
         self.input.drag_finished.connect(self.animation.finish_drag)
         self.input.double_clicked.connect(self.double_clicked)
@@ -95,6 +97,10 @@ class PetWindow(QWidget):
         self.renderer.failed.connect(self.renderer_failed)
         window = self.manifest.raw.get("window", {})
         self.resize(int(window.get("width", 640)), int(window.get("height", 960)))
+
+    def _play_touch(self) -> None:
+        self.animation.play_gesture("click")
+        self.touch_voice.play()
 
     def _update_gaze(self) -> None:
         if not self.isVisible() or not self.gaze.enabled:
@@ -140,6 +146,7 @@ class PetWindow(QWidget):
             self.random_timer.stop()
 
     def _stop_interactions(self) -> None:
+        self.touch_voice.stop()
         self.gaze_timer.stop()
         self.random_timer.stop()
         self.gaze.stop()

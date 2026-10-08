@@ -381,13 +381,13 @@ class WebEngineSpine36Renderer(QWebEngineView):
         self.play(expression.channel, expression.animation, loop=True, mix_seconds=0.15)
         return True
 
-    def set_mouth(self, openness: float, form: float = 0.0) -> bool:
+    def set_mouth(self, openness: float, form: float = 0.0, emotion: str = "neutral") -> bool:
         self._require_loaded()
         if not 0 <= openness <= 1 or not -1 <= form <= 1:
             raise ValueError("mouth values are outside their normalized ranges")
         if not self.capabilities.lip_sync or not self._ready:
             return False
-        self._call("setMouth", openness, form)
+        self._call("setMouth", openness, form, emotion)
         return True
 
     def set_gaze(self, x: float, y: float) -> bool:

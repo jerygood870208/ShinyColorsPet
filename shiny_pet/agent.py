@@ -275,6 +275,9 @@ class AgentScheduler:
                     self._submit(state.character_id, trigger, log_id)
 
     def _checkin_candidate(self, state: ScheduleState, now: datetime, now_iso: str) -> None:
+        if state.proactive_tier == "active":
+            self._active_checkin_candidate(state, now, now_iso)
+            return
         if not state.last_interaction_at:
             return
         last = datetime.fromisoformat(state.last_interaction_at).astimezone()
@@ -310,6 +313,28 @@ class AgentScheduler:
             trigger.event_key,
             scheduled,
             now_iso,
+        )
+        if log_id:
+            self._submit(state.character_id, trigger, log_id)
+
+    def _active_checkin_candidate(
+        self, state: ScheduleState, now: datetime, now_iso: str,
+    ) -> None:
+        active = self.database.advance_active_chat(state.character_id, now)
+        if (not active.level or not active.next_at
+                or now < datetime.fromisoformat(active.next_at)
+                or _outside_quiet(now, state) != now):
+            return
+        scheduled = self._iso(datetime.fromisoformat(active.next_at))
+        trigger = TriggerContext(
+            "active_checkin", active.event_key,
+            {"active_level": active.level,
+             "instruction": "Continue the conversation with a brief, natural message. "
+                            "Do not claim the user has replied or pressure them to respond."},
+            scheduled,
+        )
+        log_id = self.database.claim_schedule_event(
+            state.character_id, trigger.event_type, trigger.event_key, scheduled, now_iso,
         )
         if log_id:
             self._submit(state.character_id, trigger, log_id)

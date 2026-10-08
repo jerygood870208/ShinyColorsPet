@@ -8,6 +8,7 @@ import shutil
 import socket
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from collections.abc import Callable
@@ -81,6 +82,10 @@ class LocalIrodoriTTSServer:
         self.port = port
         self._process: subprocess.Popen[bytes] | None = None
         self._lock = threading.RLock()
+
+    @property
+    def reference_override_root(self) -> Path:
+        return self.runtime_dir.parent / "tts-reference-overrides"
 
     @property
     def api_url(self) -> str:
@@ -170,48 +175,81 @@ class LocalIrodoriTTSServer:
 
     def sync_voices(self, reference_root: Path) -> tuple[str, ...]:
         """Expose numeric character references as person_NN server voices."""
+        with self._lock:
+            return self._sync_voices(reference_root)
+
+    def _sync_voices(self, reference_root: Path) -> tuple[str, ...]:
         source_root = reference_root.expanduser().resolve()
         voice_root = self.runtime_dir / "voices"
         voice_root.mkdir(parents=True, exist_ok=True)
-        if not source_root.is_dir():
-            return ()
+        sources: dict[str, Path] = {}
+        for root in (source_root, self.reference_override_root):
+            if not root.is_dir():
+                continue
+            root_sources: dict[str, Path] = {}
+            for source in sorted(root.iterdir()):
+                if (source.is_file() and source.stem.isdigit()
+                        and source.suffix.lower() in _REFERENCE_EXTENSIONS):
+                    voice_id = f"person_{int(source.stem):02d}"
+                    previous = root_sources.get(voice_id)
+                    if (previous is None or _REFERENCE_EXTENSIONS.index(source.suffix.lower())
+                            < _REFERENCE_EXTENSIONS.index(previous.suffix.lower())):
+                        root_sources[voice_id] = source
+            sources.update(root_sources)
         prepared: list[str] = []
-        for source in sorted(source_root.iterdir()):
-            if not source.is_file() or not source.stem.isdigit():
-                continue
-            if source.suffix.lower() not in _REFERENCE_EXTENSIONS:
-                continue
-            voice_id = f"person_{int(source.stem):02d}"
+        for voice_id, source in sorted(sources.items()):
             target = voice_root / f"{voice_id}.wav"
-            if target.is_file() and target.stat().st_mtime >= source.stat().st_mtime:
+            stamp = voice_root / f"{voice_id}.source.json"
+            stat = source.stat()
+            identity = {"path": str(source.resolve()), "mtime_ns": stat.st_mtime_ns,
+                        "size": stat.st_size}
+            try:
+                unchanged = json.loads(stamp.read_text(encoding="utf-8")) == identity
+            except (OSError, ValueError):
+                unchanged = False
+            if target.is_file() and unchanged:
                 prepared.append(voice_id)
                 continue
-            if source.suffix.lower() == ".wav":
-                shutil.copy2(source, target)
-            else:
-                ffmpeg = self._ffmpeg()
-                if not ffmpeg:
-                    raise RuntimeError(trf(
-                        "需要系統 FFmpeg 才能準備 Irodori 參考音訊：{filename}。"
-                        "請先安裝 FFmpeg 並加入 PATH，或改用 WAV。",
-                        filename=source.name,
-                    ))
-                completed = subprocess.run(
-                    [ffmpeg, "-hide_banner", "-loglevel", "error", "-y", "-i",
-                     str(source), "-ac", "1", "-ar", "48000", "-c:a", "pcm_s16le",
-                     str(target)],
-                    stdin=subprocess.DEVNULL,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.PIPE,
-                    creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
-                    check=False,
-                )
-                if completed.returncode or not target.is_file():
-                    detail = completed.stderr.decode(errors="replace")[-1000:]
-                    raise RuntimeError(trf(
-                        "Irodori 參考音訊轉換失敗：{detail}", detail=detail
-                    ))
+            fd, name = tempfile.mkstemp(prefix=f".{voice_id}-", suffix=".wav", dir=voice_root)
+            os.close(fd)
+            temporary = Path(name)
+            try:
+                if source.suffix.lower() == ".wav":
+                    shutil.copy2(source, temporary)
+                else:
+                    ffmpeg = self._ffmpeg()
+                    if not ffmpeg:
+                        raise RuntimeError(trf(
+                            "需要系統 FFmpeg 才能準備 Irodori 參考音訊：{filename}。"
+                            "請先安裝 FFmpeg 並加入 PATH，或改用 WAV。",
+                            filename=source.name,
+                        ))
+                    completed = subprocess.run(
+                        [ffmpeg, "-hide_banner", "-loglevel", "error", "-y", "-i",
+                         str(source), "-ac", "1", "-ar", "48000", "-c:a", "pcm_s16le",
+                         str(temporary)],
+                        stdin=subprocess.DEVNULL,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.PIPE,
+                        creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
+                        check=False,
+                    )
+                    if completed.returncode or temporary.stat().st_size == 0:
+                        detail = completed.stderr.decode(errors="replace")[-1000:]
+                        raise RuntimeError(trf(
+                            "Irodori 參考音訊轉換失敗：{detail}", detail=detail
+                        ))
+                os.replace(temporary, target)
+            finally:
+                temporary.unlink(missing_ok=True)
+            stamp.write_text(json.dumps(identity), encoding="utf-8")
             prepared.append(voice_id)
+        # A removed override with no default must not leave its old server voice behind.
+        for stamp in voice_root.glob("person_*.source.json"):
+            voice_id = stamp.name.removesuffix(".source.json")
+            if voice_id not in sources:
+                (voice_root / f"{voice_id}.wav").unlink(missing_ok=True)
+                stamp.unlink()
         return tuple(prepared)
 
     def install(
@@ -325,6 +363,7 @@ class LocalIrodoriTTSServer:
         reference_root: Path,
         cancel: threading.Event | None = None,
     ) -> None:
+        self.sync_voices(reference_root)
         if _port_open(self.host, self.port):
             if _irodori_ready(self.host, self.port):
                 return
@@ -337,7 +376,6 @@ class LocalIrodoriTTSServer:
                 "本機 Irodori-TTS 尚未安裝，請先到 TTS 設定執行一鍵安裝。"
             ))
         self._write_environment()
-        self.sync_voices(reference_root)
         with self._lock:
             if _port_open(self.host, self.port):
                 if _irodori_ready(self.host, self.port):

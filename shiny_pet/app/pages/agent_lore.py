@@ -31,6 +31,15 @@ def _install_agent_lore(panel: Any) -> None:
     tier.addItem(tr("安靜（72 小時／每日 1 則）"), "quiet")
     tier.addItem(tr("一般（24 小時／每日 3 則）"), "normal")
     tier.addItem(tr("黏人（8 小時／每日 6 則）"), "clingy")
+    tier.addItem(tr("積極（依回覆速度調整）"), "active")
+    active_hint = QLabel(tr(
+        "積極模式：你主動聊天後啟動。第一檔每 5±2 分鐘搭話，5 分鐘未回覆降第二檔；"
+        "第二檔每 10±2 分鐘搭話，5 分鐘內回覆回第一檔，10 分鐘內回覆維持，"
+        "逾時降第三檔；第三檔每 15±2 分鐘搭話，5／10／15 分鐘內回覆分別回到"
+        "第一／第二／第三檔，15 分鐘未回覆退出。仍遵守靜默時段，不套用每日則數上限。"
+    ))
+    active_hint.setWordWrap(True)
+    active_hint.setObjectName("Muted")
     quiet_start = QTimeEdit(QTime(23, 0))
     quiet_start.setDisplayFormat("HH:mm")
     quiet_end = QTimeEdit(QTime(8, 0))
@@ -45,6 +54,8 @@ def _install_agent_lore(panel: Any) -> None:
     form.addRow(tr("靜默結束"), quiet_end)
     form.addRow("", timezone_hint)
     layout.addLayout(form)
+    layout.addWidget(active_hint)
+    tier.currentIndexChanged.connect(lambda: active_hint.setVisible(tier.currentData() == "active"))
 
     def refresh() -> None:
         key = str(character.currentData() or "")
@@ -57,6 +68,7 @@ def _install_agent_lore(panel: Any) -> None:
         state = panel.chat_database.ensure_schedule_state(key)
         enabled.setChecked(state.proactive_enabled)
         tier.setCurrentIndex(max(0, tier.findData(state.proactive_tier)))
+        active_hint.setVisible(state.proactive_tier == "active")
         quiet_start.setTime(QTime.fromString(state.quiet_hours_start, "HH:mm"))
         quiet_end.setTime(QTime.fromString(state.quiet_hours_end, "HH:mm"))
 

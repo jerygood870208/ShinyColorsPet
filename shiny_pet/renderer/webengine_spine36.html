@@ -25,7 +25,7 @@ function draw(ms){if(disposed)return;requestAnimationFrame(draw);if(ms-lastDraw<
 window.shinyApi={
  play(track,name,loop,mix,token){const anim=state.data.skeletonData.findAnimation(name);if(!anim){send("failed",{message:"animation not found: "+name});send("completed",token);return false;}const current=state.getCurrent(track);if(current&&mix>0)state.data.setMix(current.animation.name,name,mix);const entry=state.setAnimation(track,name,loop);entry.mixDuration=mix;entry._shinyToken=token;return true;},
  configureDrivers(m,g,c){drivers.configure(m,g,c);},
- setMouth(o,f){drivers.mouth(o,f);},setGaze(x,y){drivers.gaze(x,y);},
+ setMouth(o,f,e){drivers.mouth(o,f,e);},setGaze(x,y){drivers.gaze(x,y);},
  setExpressionSlot(s,a){drivers.clearExpressions();drivers.expression(s,a);},
  clearExpressionSlots(){drivers.clearExpressions();},
  clear(track){drivers.beforeApply();if(track===null){state.clearTracks();drivers.reset();}else state.clearTrack(track);skeleton.setToSetupPose();},

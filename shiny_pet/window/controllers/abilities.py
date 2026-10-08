@@ -12,11 +12,11 @@ class LipSyncController:
         self.renderer = renderer
         self.enabled = capabilities.lip_sync
 
-    def update(self, openness: float, form: float = 0.0) -> bool:
+    def update(self, openness: float, form: float = 0.0, emotion: str = "neutral") -> bool:
         if not math.isfinite(openness) or not math.isfinite(form):
             raise ValueError("mouth input must be finite")
         return self.enabled and self.renderer.set_mouth(
-            max(0.0, min(1.0, openness)), max(-1.0, min(1.0, form))
+            max(0.0, min(1.0, openness)), max(-1.0, min(1.0, form)), emotion
         )
 
     def stop(self) -> bool:
